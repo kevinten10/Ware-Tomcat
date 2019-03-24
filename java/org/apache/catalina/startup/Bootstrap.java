@@ -43,6 +43,11 @@ import org.apache.juli.logging.LogFactory;
  * roundabout approach is to keep the Catalina internal classes (and any
  * other classes they depend on, such as an XML parser) out of the system
  * class path and therefore not visible to application level classes.
+ * <p>
+ * 为卡特琳娜引导加载程序。这个应用程序构造了一个类加载器，用于加载Catalina内部类
+ * (通过积累在“Catalina .home”下的“server”目录中找到的所有JAR文件)，并启动容器的常规执行。
+ * 这种迂回方法的目的是将Catalina内部类(以及它们所依赖的任何其他类，比如XML解析器)
+ * 排除在系统类路径之外，因此对应用程序级别的类不可见。
  *
  * @author Craig R. McClanahan
  * @author Remy Maucherat
@@ -62,14 +67,27 @@ public final class Bootstrap {
 
     private static final Pattern PATH_PATTERN = Pattern.compile("(\".*?\")|(([^,])*)");
 
+    /**
+     * 对比getAbsoluteFile()、getCanonicalFile()
+     *
+     * getAbsoluteFile获取绝对文件(如果文件路径中包含.和..，不解析)
+     *
+     * getCanonicalFile获取经典文件(如果文件路径中包含.和..，解析)
+     */
     static {
         // Will always be non-null
+        // System.getProperty("user.dir")，获取当前目录
+        // 由于是在$CATALINA_HOME\bin下运行的Bootstrap，所以userDir为$CATALINA_HOME\bin
         String userDir = System.getProperty("user.dir");
 
         // Home first
+        // Globals是存放全局常量的类
+        // Globals.CATALINA_HOME_PROP = "catalina.home"
+        // catalina.home在运行Bootstrap时已设置(Tomcat的根目录)
         String home = System.getProperty(Globals.CATALINA_HOME_PROP);
         File homeFile = null;
 
+        // 获取Tomcat的绝对路径
         if (home != null) {
             File f = new File(home);
             try {
@@ -104,6 +122,7 @@ public final class Bootstrap {
             }
         }
 
+        // 设置catalinaHomeFile
         catalinaHomeFile = homeFile;
         System.setProperty(
                 Globals.CATALINA_HOME_PROP, catalinaHomeFile.getPath());
@@ -130,6 +149,8 @@ public final class Bootstrap {
 
     /**
      * Daemon reference.
+     *
+     * @see Catalina
      */
     private Object catalinaDaemon = null;
 
@@ -142,13 +163,18 @@ public final class Bootstrap {
     // -------------------------------------------------------- Private Methods
 
 
+    /**
+     * 创建commonLoader、catalinaLoader、sharedLoader
+     */
     private void initClassLoaders() {
         try {
+            // 创建commonLoader
             commonLoader = createClassLoader("common", null);
-            if( commonLoader == null ) {
+            if (commonLoader == null) {
                 // no config file, default to this loader - we might be in a 'single' env.
-                commonLoader=this.getClass().getClassLoader();
+                commonLoader = this.getClass().getClassLoader();
             }
+            // 创建catalinaLoader、sharedLoader
             catalinaLoader = createClassLoader("server", commonLoader);
             sharedLoader = createClassLoader("shared", commonLoader);
         } catch (Throwable t) {
@@ -159,13 +185,22 @@ public final class Bootstrap {
     }
 
 
+    /**
+     * 创建类加载器
+     */
     private ClassLoader createClassLoader(String name, ClassLoader parent)
-        throws Exception {
+            throws Exception {
 
+        // CatalinaProperties解析$CATALINA_HOME\conf\catalina.properties，
+        // 并将catalina.properties内的属性存为系统属性
+        // catalina.properties内common.loader="${catalina.base}/lib",
+        // "${catalina.base}/lib/*.jar","${catalina.home}/lib","${catalina.home}/lib/*.jar"
+        // 读取common.loader
         String value = CatalinaProperties.getProperty(name + ".loader");
         if ((value == null) || (value.equals("")))
             return parent;
 
+        // 将${catalina.base},${catalina.home}替换为Tomcat的绝对路径
         value = replace(value);
 
         List<Repository> repositories = new ArrayList<>();
@@ -186,7 +221,7 @@ public final class Bootstrap {
             // Local repository
             if (repository.endsWith("*.jar")) {
                 repository = repository.substring
-                    (0, repository.length() - "*.jar".length());
+                        (0, repository.length() - "*.jar".length());
                 repositories.add(new Repository(repository, RepositoryType.GLOB));
             } else if (repository.endsWith(".jar")) {
                 repositories.add(new Repository(repository, RepositoryType.JAR));
@@ -195,12 +230,15 @@ public final class Bootstrap {
             }
         }
 
+        // ClassLoaderFactory依据repositories的内容创建ClassLoader
         return ClassLoaderFactory.createClassLoader(repositories, parent);
     }
 
 
     /**
      * System property replacement in the given string.
+     * <p>
+     * 在给定字符串中替换系统属性。
      *
      * @param str The original string
      * @return the modified string
@@ -214,12 +252,14 @@ public final class Bootstrap {
             StringBuilder builder = new StringBuilder();
             int pos_end = -1;
             while (pos_start >= 0) {
+                // 占位符之前进行复制
                 builder.append(str, pos_end + 1, pos_start);
                 pos_end = str.indexOf('}', pos_start + 2);
                 if (pos_end < 0) {
                     pos_end = pos_start - 1;
                     break;
                 }
+                // 占位符替换
                 String propName = str.substring(pos_start + 2, pos_end);
                 String replacement;
                 if (propName.length() == 0) {
@@ -247,19 +287,23 @@ public final class Bootstrap {
 
     /**
      * Initialize daemon.
+     *
      * @throws Exception Fatal initialization error
      */
     public void init() throws Exception {
 
+        // 创建commonLoader、catalinaLoader、sharedLoader
         initClassLoaders();
 
         Thread.currentThread().setContextClassLoader(catalinaLoader);
 
+        // 设置SecurityClassLoad。具体作用还不清楚。。
         SecurityClassLoad.securityClassLoad(catalinaLoader);
 
         // Load our startup class and call its process() method
         if (log.isDebugEnabled())
             log.debug("Loading startup class");
+        // 通过反射实例化Catalina
         Class<?> startupClass = catalinaLoader.loadClass("org.apache.catalina.startup.Catalina");
         Object startupInstance = startupClass.getConstructor().newInstance();
 
@@ -271,26 +315,33 @@ public final class Bootstrap {
         paramTypes[0] = Class.forName("java.lang.ClassLoader");
         Object paramValues[] = new Object[1];
         paramValues[0] = sharedLoader;
+        // 通过反射设置Catalina的parentClassLoader
         Method method =
-            startupInstance.getClass().getMethod(methodName, paramTypes);
+                startupInstance.getClass().getMethod(methodName, paramTypes);
         method.invoke(startupInstance, paramValues);
 
+        // 将实例化的Catalina赋值给catalinaDaemon
         catalinaDaemon = startupInstance;
-
     }
 
 
     /**
      * Load daemon.
+     * <p>
+     * Bootstrap.load(args)内部通过反射调用Catalina.load(args)，
+     * Catalina将利用Digest(Digest详解)解析server.xml，创建相应组件的实例，
+     * 之后调用Server.init()，Server初始化时，又会调用其内部的Service的init方法，即调用某一组件的init方法时，将触发其子组件的init方法
+     * <p>
+     * 执行Bootstrap.load(args)将触发的动作
      */
     private void load(String[] arguments)
-        throws Exception {
+            throws Exception {
 
         // Call the load() method
         String methodName = "load";
         Object param[];
         Class<?> paramTypes[];
-        if (arguments==null || arguments.length==0) {
+        if (arguments == null || arguments.length == 0) {
             paramTypes = null;
             param = null;
         } else {
@@ -300,7 +351,7 @@ public final class Bootstrap {
             param[0] = arguments;
         }
         Method method =
-            catalinaDaemon.getClass().getMethod(methodName, paramTypes);
+                catalinaDaemon.getClass().getMethod(methodName, paramTypes);
         if (log.isDebugEnabled())
             log.debug("Calling startup class " + method);
         method.invoke(catalinaDaemon, param);
@@ -315,7 +366,7 @@ public final class Bootstrap {
 
         String methodName = "getServer";
         Method method =
-            catalinaDaemon.getClass().getMethod(methodName);
+                catalinaDaemon.getClass().getMethod(methodName);
         return method.invoke(catalinaDaemon);
 
     }
@@ -326,11 +377,12 @@ public final class Bootstrap {
 
     /**
      * Load the Catalina daemon.
+     *
      * @param arguments Initialization arguments
      * @throws Exception Fatal initialization error
      */
     public void init(String[] arguments)
-        throws Exception {
+            throws Exception {
 
         init();
         load(arguments);
@@ -340,56 +392,60 @@ public final class Bootstrap {
 
     /**
      * Start the Catalina daemon.
+     *
      * @throws Exception Fatal start error
      */
     public void start()
-        throws Exception {
-        if( catalinaDaemon==null ) init();
+            throws Exception {
+        if (catalinaDaemon == null) init();
 
-        Method method = catalinaDaemon.getClass().getMethod("start", (Class [] )null);
-        method.invoke(catalinaDaemon, (Object [])null);
+        Method method = catalinaDaemon.getClass().getMethod("start", (Class[]) null);
+        method.invoke(catalinaDaemon, (Object[]) null);
 
     }
 
 
     /**
      * Stop the Catalina Daemon.
+     *
      * @throws Exception Fatal stop error
      */
     public void stop()
-        throws Exception {
+            throws Exception {
 
-        Method method = catalinaDaemon.getClass().getMethod("stop", (Class [] ) null);
-        method.invoke(catalinaDaemon, (Object [] ) null);
+        Method method = catalinaDaemon.getClass().getMethod("stop", (Class[]) null);
+        method.invoke(catalinaDaemon, (Object[]) null);
 
     }
 
 
     /**
      * Stop the standalone server.
+     *
      * @throws Exception Fatal stop error
      */
     public void stopServer()
-        throws Exception {
+            throws Exception {
 
         Method method =
-            catalinaDaemon.getClass().getMethod("stopServer", (Class []) null);
-        method.invoke(catalinaDaemon, (Object []) null);
+                catalinaDaemon.getClass().getMethod("stopServer", (Class[]) null);
+        method.invoke(catalinaDaemon, (Object[]) null);
 
     }
 
 
-   /**
+    /**
      * Stop the standalone server.
+     *
      * @param arguments Command line arguments
      * @throws Exception Fatal stop error
      */
     public void stopServer(String[] arguments)
-        throws Exception {
+            throws Exception {
 
         Object param[];
         Class<?> paramTypes[];
-        if (arguments==null || arguments.length==0) {
+        if (arguments == null || arguments.length == 0) {
             paramTypes = null;
             param = null;
         } else {
@@ -399,7 +455,7 @@ public final class Bootstrap {
             param[0] = arguments;
         }
         Method method =
-            catalinaDaemon.getClass().getMethod("stopServer", paramTypes);
+                catalinaDaemon.getClass().getMethod("stopServer", paramTypes);
         method.invoke(catalinaDaemon, param);
 
     }
@@ -407,30 +463,46 @@ public final class Bootstrap {
 
     /**
      * Set flag.
+     * <p>
+     * Bootstrap.setAwait(true)内部通过反射，设置Catalina的await属性(默认为false)为true
+     * <p>
+     * 启动Catalina过程中，当Catalina将Tomcat的所有组件启动之后，会检查await属性，如果为true，
+     * 会调用Catalina.await()，而Catalina.await()又会调用其内部的Server的await()
+     * <p>
+     * Server.await()包含一个while循环，此循环用于监听指定socket端口(默认为8005)的连接，
+     * 当某个连接传入的参数为”SHUTDOWN”(默认为”SHUTDOWN”)时，终止此while循环(端口号和终止while循环的参数，在server.xml的Server标签设置)
+     * <p>
+     * Server.await()用来维持Bootstrap的main方法(main thread)处于运行状态，
+     * 而线程池中监听http请求的线程是守护线程(daemon thread)
+     * <p>
+     * 当Tomcat的指定端口接收到关闭命令时，Server.await()内的while循环终止，
+     * 然后Catalina会调用stop()方法，关闭Tomcat的所有组件，最终Bootstrap的main thread终止，Tomcat关闭
+     * <p>
+     * 2.5 调用Bootstrap.load(args)
+     *
      * @param await <code>true</code> if the daemon should block
      * @throws Exception Reflection error
      */
     public void setAwait(boolean await)
-        throws Exception {
+            throws Exception {
 
         Class<?> paramTypes[] = new Class[1];
         paramTypes[0] = Boolean.TYPE;
         Object paramValues[] = new Object[1];
         paramValues[0] = Boolean.valueOf(await);
         Method method =
-            catalinaDaemon.getClass().getMethod("setAwait", paramTypes);
+                catalinaDaemon.getClass().getMethod("setAwait", paramTypes);
         method.invoke(catalinaDaemon, paramValues);
 
     }
 
     public boolean getAwait()
-        throws Exception
-    {
+            throws Exception {
         Class<?> paramTypes[] = new Class[0];
         Object paramValues[] = new Object[0];
         Method method =
-            catalinaDaemon.getClass().getMethod("getAwait", paramTypes);
-        Boolean b=(Boolean)method.invoke(catalinaDaemon, paramValues);
+                catalinaDaemon.getClass().getMethod("getAwait", paramTypes);
+        Boolean b = (Boolean) method.invoke(catalinaDaemon, paramValues);
         return b.booleanValue();
     }
 
@@ -456,8 +528,10 @@ public final class Bootstrap {
         synchronized (daemonLock) {
             if (daemon == null) {
                 // Don't set daemon until init() has completed
+                // 创建bootstrap
                 Bootstrap bootstrap = new Bootstrap();
                 try {
+                    // init
                     bootstrap.init();
                 } catch (Throwable t) {
                     handleThrowable(t);
@@ -473,6 +547,7 @@ public final class Bootstrap {
             }
         }
 
+        // 解析参数
         try {
             String command = "start";
             if (args.length > 0) {
@@ -487,8 +562,11 @@ public final class Bootstrap {
                 args[args.length - 1] = "stop";
                 daemon.stop();
             } else if (command.equals("start")) {
+                // 调用Bootstrap.setAwait(true)
                 daemon.setAwait(true);
+                // 调用Bootstrap.load(args)
                 daemon.load(args);
+                //
                 daemon.start();
                 if (null == daemon.getServer()) {
                     System.exit(1);
@@ -510,6 +588,7 @@ public final class Bootstrap {
                     t.getCause() != null) {
                 t = t.getCause();
             }
+            // 启动失败，直接退出
             handleThrowable(t);
             t.printStackTrace();
             System.exit(1);
@@ -521,6 +600,7 @@ public final class Bootstrap {
     /**
      * Obtain the name of configured home (binary) directory. Note that home and
      * base may be the same (and are by default).
+     *
      * @return the catalina home
      */
     public static String getCatalinaHome() {
@@ -532,6 +612,7 @@ public final class Bootstrap {
      * Obtain the name of the configured base (instance) directory. Note that
      * home and base may be the same (and are by default). If this is not set
      * the value returned by {@link #getCatalinaHome()} will be used.
+     *
      * @return the catalina base
      */
     public static String getCatalinaBase() {
@@ -542,6 +623,7 @@ public final class Bootstrap {
     /**
      * Obtain the configured home (binary) directory. Note that home and
      * base may be the same (and are by default).
+     *
      * @return the catalina home as a file
      */
     public static File getCatalinaHomeFile() {
@@ -553,6 +635,7 @@ public final class Bootstrap {
      * Obtain the configured base (instance) directory. Note that
      * home and base may be the same (and are by default). If this is not set
      * the value returned by {@link #getCatalinaHomeFile()} will be used.
+     *
      * @return the catalina base as a file
      */
     public static File getCatalinaBaseFile() {
@@ -601,7 +684,7 @@ public final class Bootstrap {
                 // been configured.
                 throw new IllegalArgumentException(
                         "The double quote [\"] character only be used to quote paths. It must " +
-                        "not appear in a path. This loader path is not valid: [" + value + "]");
+                                "not appear in a path. This loader path is not valid: [" + value + "]");
             } else {
                 // Not quoted - NO-OP
             }
