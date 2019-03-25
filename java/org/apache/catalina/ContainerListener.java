@@ -23,6 +23,8 @@ package org.apache.catalina;
  * Interface defining a listener for significant Container generated events.
  * Note that "container start" and "container stop" events are normally
  * LifecycleEvents, not ContainerEvents.
+ * <p>
+ * 为重要容器生成的事件定义侦听器的接口。*注意“容器启动”和“容器停止”事件通常是* LifecycleEvents，而不是ContainerEvents。
  *
  * @author Craig R. McClanahan
  */

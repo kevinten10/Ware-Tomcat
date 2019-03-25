@@ -29,6 +29,9 @@ import java.io.IOException;
  * Implementations are free to save and load the Sessions to any media they
  * wish, but it is assumed that saved Sessions are persistent across
  * server or context restarts.
+ * <p>
+ * A <b>Store</b>是Catalina组件的抽象，它提供了会话及其相关用户数据的持久存储和加载。
+ * *实现可以自由地将会话保存并加载到它们*希望的任何媒体，但是假设保存的会话是跨*服务器或上下文重启的持久性会话。
  *
  * @author Craig R. McClanahan
  */
@@ -52,8 +55,7 @@ public interface Store {
 
     /**
      * @return the number of Sessions present in this Store.
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     public int getSize() throws IOException;
 
@@ -73,8 +75,7 @@ public interface Store {
      * @return an array containing the session identifiers of all Sessions
      * currently saved in this Store.  If there are no such Sessions, a
      * zero-length array is returned.
-     *
-     * @exception IOException if an input/output error occurred
+     * @throws IOException if an input/output error occurred
      */
     public String[] keys() throws IOException;
 
@@ -85,13 +86,12 @@ public interface Store {
      * such stored Session, return <code>null</code>.
      *
      * @param id Session identifier of the session to load
-     *
-     * @exception ClassNotFoundException if a deserialization error occurs
-     * @exception IOException if an input/output error occurs
      * @return the loaded Session instance
+     * @throws ClassNotFoundException if a deserialization error occurs
+     * @throws IOException            if an input/output error occurs
      */
     public Session load(String id)
-        throws ClassNotFoundException, IOException;
+            throws ClassNotFoundException, IOException;
 
 
     /**
@@ -100,8 +100,7 @@ public interface Store {
      * takes no action.
      *
      * @param id Session identifier of the Session to be removed
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     public void remove(String id) throws IOException;
 
@@ -109,7 +108,7 @@ public interface Store {
     /**
      * Remove all Sessions from this Store.
      *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     public void clear() throws IOException;
 
@@ -127,8 +126,7 @@ public interface Store {
      * information for the associated session identifier is replaced.
      *
      * @param session Session to be saved
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     public void save(Session session) throws IOException;
 

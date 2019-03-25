@@ -63,7 +63,7 @@ public abstract class LifecycleBase implements Lifecycle {
      * the caller to handle or will it be logged instead?
      *
      * @return {@code true} if the exception will be re-thrown, otherwise
-     *         {@code false}
+     * {@code false}
      */
     public boolean getThrowOnFailure() {
         return throwOnFailure;
@@ -114,8 +114,8 @@ public abstract class LifecycleBase implements Lifecycle {
     /**
      * Allow sub classes to fire {@link Lifecycle} events.
      *
-     * @param type  Event type
-     * @param data  Data associated with event.
+     * @param type Event type
+     * @param data Data associated with event.
      */
     protected void fireLifecycleEvent(String type, Object data) {
         LifecycleEvent event = new LifecycleEvent(this, type, data);
@@ -144,6 +144,8 @@ public abstract class LifecycleBase implements Lifecycle {
     /**
      * Sub-classes implement this method to perform any instance initialisation
      * required.
+     * <p>
+     * 子类实现此方法来执行所需的任何实例初始化*。*
      *
      * @throws LifecycleException If the initialisation fails
      */
@@ -204,12 +206,18 @@ public abstract class LifecycleBase implements Lifecycle {
      * Sub-classes must ensure that the state is changed to
      * {@link LifecycleState#STARTING} during the execution of this method.
      * Changing state will trigger the {@link Lifecycle#START_EVENT} event.
-     *
+     * <p>
      * If a component fails to start it may either throw a
      * {@link LifecycleException} which will cause it's parent to fail to start
      * or it can place itself in the error state in which case {@link #stop()}
      * will be called on the failed component but the parent component will
      * continue to start normally.
+     * <p>
+     * 子类必须确保在执行此方法期间将状态更改为* {@link LifecycleState# started}。
+     * *更改状态将触发{@link Lifecycle#START_EVENT}事件。
+     * 如果一个组件没有启动它可以抛出一个* {@link LifecycleException}
+     * 这将导致它的母公司无法启动*或它可以将自己处于错误状态在这种情况下,{@link #stop()}
+     * 将呼吁失败的组件,但父组件将继续正常开始。
      *
      * @throws LifecycleException Start error occurred
      */

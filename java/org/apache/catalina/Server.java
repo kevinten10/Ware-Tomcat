@@ -44,6 +44,13 @@ import org.apache.catalina.startup.Catalina;
  * <strong>NOTE</strong> - The concrete implementation of this class should
  * register the (singleton) instance with the <code>ServerFactory</code>
  * class in its constructor(s).
+ * <p>
+ * Server元素表示整个Catalina servlet容器。
+ * 它的属性表示整个servlet容器的特征。服务器可能包含一个或多个服务，以及顶级的命名资源集。
+ * 通常，此接口的实现还将实现生命周期，这样，当调用start()和stop()方法时，所有已定义的服务也将启动或停止。
+ * 在这两者之间，实现必须在port属性指定的端口号上打开服务器套接字。
+ * 当接受连接时，将读取第一行并与指定的shutdown命令进行比较。如果命令匹配，则启动关闭服务器
+ * 。注意:该类的具体实现应该在构造函数中向ServerFactory类注册(单例)实例。
  *
  * @author Craig R. McClanahan
  */
@@ -63,7 +70,7 @@ public interface Server extends Lifecycle {
      * @param globalNamingResources The new global naming resources
      */
     public void setGlobalNamingResources
-        (NamingResourcesImpl globalNamingResources);
+    (NamingResourcesImpl globalNamingResources);
 
 
     /**
@@ -74,7 +81,6 @@ public interface Server extends Lifecycle {
 
     /**
      * @return the port number we listen to for shutdown commands.
-     *
      * @see #getPortOffset()
      * @see #getPortWithOffset()
      */
@@ -85,7 +91,6 @@ public interface Server extends Lifecycle {
      * Set the port number we listen to for shutdown commands.
      *
      * @param port The new port number
-     *
      * @see #setPortOffset(int)
      */
     public void setPort(int port);
@@ -207,6 +212,7 @@ public interface Server extends Lifecycle {
 
     /**
      * Get the utility thread count.
+     *
      * @return the thread count
      */
     public int getUtilityThreads();
@@ -214,6 +220,7 @@ public interface Server extends Lifecycle {
 
     /**
      * Set the utility thread count.
+     *
      * @param utilityThreads the new thread count
      */
     public void setUtilityThreads(int utilityThreads);
