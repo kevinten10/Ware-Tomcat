@@ -51,7 +51,7 @@ import org.apache.tomcat.util.res.StringManager;
  * @author Craig R. McClanahan
  * @author Remy Maucherat
  */
-public class Connector extends LifecycleMBeanBase  {
+public class Connector extends LifecycleMBeanBase {
 
     private static final Log log = LogFactory.getLog(Connector.class);
 
@@ -60,7 +60,7 @@ public class Connector extends LifecycleMBeanBase  {
      * Alternate flag to enable recycling of facades.
      */
     public static final boolean RECYCLE_FACADES =
-        Boolean.parseBoolean(System.getProperty("org.apache.catalina.connector.RECYCLE_FACADES", "false"));
+            Boolean.parseBoolean(System.getProperty("org.apache.catalina.connector.RECYCLE_FACADES", "false"));
 
 
     public static final String INTERNAL_EXECUTOR_NAME = "Internal";
@@ -281,7 +281,7 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * Set a property on the protocol handler.
      *
-     * @param name the property name
+     * @param name  the property name
      * @param value the property value
      * @return <code>true</code> if the property was successfully set
      */
@@ -307,7 +307,7 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * Set a property on the protocol handler.
      *
-     * @param name the property name
+     * @param name  the property name
      * @param value the property value
      */
     public void setAttribute(String name, Object value) {
@@ -335,7 +335,7 @@ public class Connector extends LifecycleMBeanBase  {
 
     /**
      * @return <code>true</code> if the TRACE method is allowed. Default value
-     *         is <code>false</code>.
+     * is <code>false</code>.
      */
     public boolean getAllowTrace() {
         return this.allowTrace;
@@ -367,7 +367,7 @@ public class Connector extends LifecycleMBeanBase  {
      * @param asyncTimeout The new timeout in ms.
      */
     public void setAsyncTimeout(long asyncTimeout) {
-        this.asyncTimeout= asyncTimeout;
+        this.asyncTimeout = asyncTimeout;
         setProperty("asyncTimeout", String.valueOf(asyncTimeout));
     }
 
@@ -438,7 +438,7 @@ public class Connector extends LifecycleMBeanBase  {
      * parsed by the container.
      *
      * @param maxPostSize The new maximum size in bytes of a POST which will
-     * be automatically parsed by the container
+     *                    be automatically parsed by the container
      */
     public void setMaxPostSize(int maxPostSize) {
         this.maxPostSize = maxPostSize;
@@ -460,7 +460,7 @@ public class Connector extends LifecycleMBeanBase  {
      * during authentication.
      *
      * @param maxSavePostSize The new maximum size in bytes of a POST which will
-     * be saved by the container during authentication.
+     *                        be saved by the container during authentication.
      */
     public void setMaxSavePostSize(int maxSavePostSize) {
         this.maxSavePostSize = maxSavePostSize;
@@ -582,14 +582,14 @@ public class Connector extends LifecycleMBeanBase  {
      */
     public String getProtocol() {
         if (("org.apache.coyote.http11.Http11NioProtocol".equals(getProtocolHandlerClassName()) &&
-                    (!AprLifecycleListener.isAprAvailable() || !AprLifecycleListener.getUseAprConnector())) ||
+                (!AprLifecycleListener.isAprAvailable() || !AprLifecycleListener.getUseAprConnector())) ||
                 "org.apache.coyote.http11.Http11AprProtocol".equals(getProtocolHandlerClassName()) &&
-                    AprLifecycleListener.getUseAprConnector()) {
+                        AprLifecycleListener.getUseAprConnector()) {
             return "HTTP/1.1";
         } else if (("org.apache.coyote.ajp.AjpNioProtocol".equals(getProtocolHandlerClassName()) &&
-                    (!AprLifecycleListener.isAprAvailable() || !AprLifecycleListener.getUseAprConnector())) ||
+                (!AprLifecycleListener.isAprAvailable() || !AprLifecycleListener.getUseAprConnector())) ||
                 "org.apache.coyote.ajp.AjpAprProtocol".equals(getProtocolHandlerClassName()) &&
-                    AprLifecycleListener.getUseAprConnector()) {
+                        AprLifecycleListener.getUseAprConnector()) {
             return "AJP/1.3";
         }
         return getProtocolHandlerClassName();
@@ -627,7 +627,7 @@ public class Connector extends LifecycleMBeanBase  {
      */
     public void setProxyName(String proxyName) {
 
-        if(proxyName != null && proxyName.length() > 0) {
+        if (proxyName != null && proxyName.length() > 0) {
             this.proxyName = proxyName;
         } else {
             this.proxyName = null;
@@ -732,9 +732,8 @@ public class Connector extends LifecycleMBeanBase  {
 
 
     /**
-     *
      * @return The Charset to use to convert raw URI bytes (after %nn decoding)
-     *         to characters. This will never be null
+     * to characters. This will never be null
      */
     public Charset getURICharset() {
         return uriCharset;
@@ -791,7 +790,7 @@ public class Connector extends LifecycleMBeanBase  {
      * Connector.
      *
      * @param xpoweredBy true if generation of X-Powered-By response header is
-     * to be enabled, false otherwise
+     *                   to be enabled, false otherwise
      */
     public void setXpoweredBy(boolean xpoweredBy) {
         this.xpoweredBy = xpoweredBy;
@@ -855,6 +854,8 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * Create (or allocate) and return a Request object suitable for
      * specifying the contents of a Request to the responsible Container.
+     * <p>
+     * 创建(或分配)一个适合*指定请求内容的请求对象并返回给负责的容器。
      *
      * @return a new Servlet request object
      */
@@ -988,7 +989,7 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * Begin processing requests via this Connector.
      *
-     * @exception LifecycleException if a fatal startup error occurs
+     * @throws LifecycleException if a fatal startup error occurs
      */
     @Override
     protected void startInternal() throws LifecycleException {
@@ -1013,7 +1014,7 @@ public class Connector extends LifecycleMBeanBase  {
     /**
      * Terminate processing requests via this Connector.
      *
-     * @exception LifecycleException if a fatal shutdown error occurs
+     * @throws LifecycleException if a fatal shutdown error occurs
      */
     @Override
     protected void stopInternal() throws LifecycleException {
