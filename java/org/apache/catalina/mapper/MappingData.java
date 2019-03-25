@@ -25,7 +25,7 @@ import org.apache.catalina.Wrapper;
 import org.apache.tomcat.util.buf.MessageBytes;
 
 /**
- * Mapping data.
+ * Mapping data. 返回映射数据结构，然后基于此进入pipeline进行链式处理
  *
  * @author Remy Maucherat
  */

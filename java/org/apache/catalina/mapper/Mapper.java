@@ -42,6 +42,9 @@ import org.apache.tomcat.util.res.StringManager;
 /**
  * Mapper, which implements the servlet API mapping rules (which are derived
  * from the HTTP rules).
+ * <p>
+ * Mapper中以数组的形式保存了host, context, wrapper, 且他们在数组中有序的，Mapper可以通过请求的url，通过二分法查找定位到wrapper
+ * 主要的映射处理类，该类中对Tomcat的后端业务逻辑处理类，从Engine一直到Wrapper进行数据结构的缓存
  *
  * @author Remy Maucherat
  */
@@ -57,6 +60,8 @@ public final class Mapper {
 
     /**
      * Array containing the virtual hosts definitions.
+     * <p>
+     * 路由表：host数组，host里面又包括了context和wrapper数组
      */
     // Package private to facilitate testing
     volatile MappedHost[] hosts = new MappedHost[0];
@@ -64,6 +69,8 @@ public final class Mapper {
 
     /**
      * Default host name.
+     * <p>
+     * 默认路由映射
      */
     private volatile String defaultHostName = null;
     private volatile MappedHost defaultHost = null;
@@ -72,6 +79,8 @@ public final class Mapper {
     /**
      * Mapping from Context object to Context version to support
      * RequestDispatcher mappings.
+     * <p>
+     * Context(StandardContext)对象到ContextVersion(路由表内部对象)之间的映射，以支持RequestDispatcher映射。方便tomcat内部对象查询使用
      */
     private final Map<Context, ContextVersion> contextObjectToContextVersionMap =
             new ConcurrentHashMap<>();
@@ -96,10 +105,14 @@ public final class Mapper {
 
     /**
      * Add a new host to the mapper.
+     * <p>
+     * 每次添加都创建一个新的数组，然后复制过去
+     * <p>
+     * 一个host拥有多个别名alia
      *
-     * @param name Virtual host name
+     * @param name    Virtual host name
      * @param aliases Alias names for the virtual host
-     * @param host Host object
+     * @param host    Host object
      */
     public synchronized void addHost(String name, String[] aliases,
                                      Host host) {
@@ -168,6 +181,7 @@ public final class Mapper {
 
     /**
      * Add an alias to an existing host.
+     *
      * @param name  The name of the host
      * @param alias The alias to add
      */
@@ -217,6 +231,7 @@ public final class Mapper {
 
     /**
      * Remove a host alias
+     *
      * @param alias The alias to remove
      */
     public synchronized void removeHostAlias(String alias) {
@@ -237,9 +252,11 @@ public final class Mapper {
     /**
      * Replace {@link MappedHost#contextList} field in <code>realHost</code> and
      * all its aliases with a new value.
+     * <p>
+     * 用一个新值替换<code>realHost</code> >中的{@link MappedHost#contextList}字段，并*其所有别名。
      */
     private void updateContextList(MappedHost realHost,
-            ContextList newContextList) {
+                                   ContextList newContextList) {
 
         realHost.contextList = newContextList;
         for (MappedHost alias : realHost.getAliases()) {
@@ -250,22 +267,27 @@ public final class Mapper {
     /**
      * Add a new Context to an existing Host.
      *
-     * @param hostName Virtual host name this context belongs to
-     * @param host Host object
-     * @param path Context path
-     * @param version Context version
-     * @param context Context object
+     * @param hostName         Virtual host name this context belongs to
+     * @param host             Host object
+     * @param path             Context path
+     * @param version          Context version
+     * @param context          Context object
      * @param welcomeResources Welcome files defined for this context
-     * @param resources Static resources of the context
-     * @param wrappers Information on wrapper mappings
+     * @param resources        Static resources of the context
+     * @param wrappers         Information on wrapper mappings
      */
-    public void addContextVersion(String hostName, Host host, String path,
-            String version, Context context, String[] welcomeResources,
-            WebResourceRoot resources, Collection<WrapperMappingInfo> wrappers) {
+    public void addContextVersion(String hostName,
+                                  Host host,
+                                  String path,
+                                  String version,
+                                  Context context,
+                                  String[] welcomeResources,
+                                  WebResourceRoot resources,
+                                  Collection<WrapperMappingInfo> wrappers) {
 
         hostName = renameWildcardHost(hostName);
 
-        MappedHost mappedHost  = exactFind(hosts, hostName);
+        MappedHost mappedHost = exactFind(hosts, hostName);
         if (mappedHost == null) {
             addHost(hostName, new String[0], host);
             mappedHost = exactFind(hosts, hostName);
@@ -321,13 +343,13 @@ public final class Mapper {
     /**
      * Remove a context from an existing host.
      *
-     * @param ctxt      The actual context
-     * @param hostName  Virtual host name this context belongs to
-     * @param path      Context path
-     * @param version   Context version
+     * @param ctxt     The actual context
+     * @param hostName Virtual host name this context belongs to
+     * @param path     Context path
+     * @param version  Context version
      */
     public void removeContextVersion(Context ctxt, String hostName,
-            String path, String version) {
+                                     String path, String version) {
 
         hostName = renameWildcardHost(hostName);
         contextObjectToContextVersionMap.remove(ctxt);
@@ -346,7 +368,7 @@ public final class Mapper {
 
             ContextVersion[] contextVersions = context.versions;
             ContextVersion[] newContextVersions =
-                new ContextVersion[contextVersions.length - 1];
+                    new ContextVersion[contextVersions.length - 1];
             if (removeMap(contextVersions, newContextVersions, version)) {
                 if (newContextVersions.length == 0) {
                     // Remove the context
@@ -365,14 +387,18 @@ public final class Mapper {
     /**
      * Mark a context as being reloaded. Reversion of this state is performed
      * by calling <code>addContextVersion(...)</code> when context starts up.
+     * <p>
+     * 将上下文标记为正在重新加载。
+     * 通过在上下文启动时调用<code>addContextVersion(…)</code>执行此状态的恢复*。
+     * 使用一个flag表示开关进行控制
      *
-     * @param ctxt      The actual context
-     * @param hostName  Virtual host name this context belongs to
+     * @param ctxt        The actual context
+     * @param hostName    Virtual host name this context belongs to
      * @param contextPath Context path
-     * @param version   Context version
+     * @param version     Context version
      */
     public void pauseContextVersion(Context ctxt, String hostName,
-            String contextPath, String version) {
+                                    String contextPath, String version) {
         hostName = renameWildcardHost(hostName);
         ContextVersion contextVersion = findContextVersion(hostName,
                 contextPath, version, true);
@@ -384,7 +410,7 @@ public final class Mapper {
 
 
     private ContextVersion findContextVersion(String hostName,
-            String contextPath, String version, boolean silent) {
+                                              String contextPath, String version, boolean silent) {
         MappedHost host = exactFind(hosts, hostName);
         if (host == null || host.isAlias()) {
             if (!silent) {
@@ -424,7 +450,7 @@ public final class Mapper {
     }
 
     public void addWrappers(String hostName, String contextPath,
-            String version, Collection<WrapperMappingInfo> wrappers) {
+                            String version, Collection<WrapperMappingInfo> wrappers) {
         hostName = renameWildcardHost(hostName);
         ContextVersion contextVersion = findContextVersion(hostName,
                 contextPath, version, false);
@@ -438,10 +464,10 @@ public final class Mapper {
      * Adds wrappers to the given context.
      *
      * @param contextVersion The context to which to add the wrappers
-     * @param wrappers Information on wrapper mappings
+     * @param wrappers       Information on wrapper mappings
      */
     private void addWrappers(ContextVersion contextVersion,
-            Collection<WrapperMappingInfo> wrappers) {
+                             Collection<WrapperMappingInfo> wrappers) {
         for (WrapperMappingInfo wrapper : wrappers) {
             addWrapper(contextVersion, wrapper.getMapping(),
                     wrapper.getWrapper(), wrapper.isJspWildCard(),
@@ -452,16 +478,16 @@ public final class Mapper {
     /**
      * Adds a wrapper to the given context.
      *
-     * @param context The context to which to add the wrapper
-     * @param path Wrapper mapping
-     * @param wrapper The Wrapper object
-     * @param jspWildCard true if the wrapper corresponds to the JspServlet
-     *   and the mapping path contains a wildcard; false otherwise
+     * @param context      The context to which to add the wrapper
+     * @param path         Wrapper mapping
+     * @param wrapper      The Wrapper object
+     * @param jspWildCard  true if the wrapper corresponds to the JspServlet
+     *                     and the mapping path contains a wildcard; false otherwise
      * @param resourceOnly true if this wrapper always expects a physical
      *                     resource to be present (such as a JSP)
      */
     protected void addWrapper(ContextVersion context, String path,
-            Wrapper wrapper, boolean jspWildCard, boolean resourceOnly) {
+                              Wrapper wrapper, boolean jspWildCard, boolean resourceOnly) {
 
         synchronized (context) {
             if (path.endsWith("/*")) {
@@ -485,7 +511,7 @@ public final class Mapper {
                         jspWildCard, resourceOnly);
                 MappedWrapper[] oldWrappers = context.extensionWrappers;
                 MappedWrapper[] newWrappers =
-                    new MappedWrapper[oldWrappers.length + 1];
+                        new MappedWrapper[oldWrappers.length + 1];
                 if (insertMap(oldWrappers, newWrappers, newWrapper)) {
                     context.extensionWrappers = newWrappers;
                 }
@@ -525,7 +551,7 @@ public final class Mapper {
      * @param path        Wrapper mapping
      */
     public void removeWrapper(String hostName, String contextPath,
-            String version, String path) {
+                              String version, String path) {
         hostName = renameWildcardHost(hostName);
         ContextVersion contextVersion = findContextVersion(hostName,
                 contextPath, version, true);
@@ -550,7 +576,7 @@ public final class Mapper {
                     return;
                 }
                 MappedWrapper[] newWrappers =
-                    new MappedWrapper[oldWrappers.length - 1];
+                        new MappedWrapper[oldWrappers.length - 1];
                 if (removeMap(oldWrappers, newWrappers, name)) {
                     // Recalculate nesting
                     context.nesting = 0;
@@ -570,7 +596,7 @@ public final class Mapper {
                     return;
                 }
                 MappedWrapper[] newWrappers =
-                    new MappedWrapper[oldWrappers.length - 1];
+                        new MappedWrapper[oldWrappers.length - 1];
                 if (removeMap(oldWrappers, newWrappers, name)) {
                     context.extensionWrappers = newWrappers;
                 }
@@ -592,7 +618,7 @@ public final class Mapper {
                     return;
                 }
                 MappedWrapper[] newWrappers =
-                    new MappedWrapper[oldWrappers.length - 1];
+                        new MappedWrapper[oldWrappers.length - 1];
                 if (removeMap(oldWrappers, newWrappers, name)) {
                     context.exactWrappers = newWrappers;
                 }
@@ -610,7 +636,7 @@ public final class Mapper {
      * @param welcomeFile The welcome file to add
      */
     public void addWelcomeFile(String hostName, String contextPath, String version,
-            String welcomeFile) {
+                               String welcomeFile) {
         hostName = renameWildcardHost(hostName);
         ContextVersion contextVersion = findContextVersion(hostName, contextPath, version, false);
         if (contextVersion == null) {
@@ -633,7 +659,7 @@ public final class Mapper {
      * @param welcomeFile The welcome file to remove
      */
     public void removeWelcomeFile(String hostName, String contextPath,
-            String version, String welcomeFile) {
+                                  String version, String welcomeFile) {
         hostName = renameWildcardHost(hostName);
         ContextVersion contextVersion = findContextVersion(hostName, contextPath, version, false);
         if (contextVersion == null || contextVersion.isPaused()) {
@@ -678,10 +704,14 @@ public final class Mapper {
 
     /**
      * Map the specified host name and URI, mutating the given mapping data.
+     * <p>
+     * 映射指定的主机名和URI，修改给定的映射数据。
+     * <p>
+     * CoyoteAdapter会获取Connector中的Service中的Mapper，然后调用map()方法。
      *
-     * @param host Virtual host name
-     * @param uri URI
-     * @param version The version, if any, included in the request to be mapped
+     * @param host        Virtual host name
+     * @param uri         URI
+     * @param version     The version, if any, included in the request to be mapped
      * @param mappingData This structure will contain the result of the mapping
      *                    operation
      * @throws IOException if the buffers are too small to hold the results of
@@ -699,6 +729,8 @@ public final class Mapper {
         }
         host.toChars();
         uri.toChars();
+
+        // 1 调用私有方法internalMap，传入host, uri, version, 结果将会保存在mappingData中
         internalMap(host.getCharChunk(), uri.getCharChunk(), version, mappingData);
     }
 
@@ -706,17 +738,20 @@ public final class Mapper {
     /**
      * Map the specified URI relative to the context,
      * mutating the given mapping data.
+     * <p>
+     * 将指定的URI映射到上下文，*修改给定的映射数据。
      *
-     * @param context The actual context
-     * @param uri URI
+     * @param context     The actual context
+     * @param uri         URI
      * @param mappingData This structure will contain the result of the mapping
      *                    operation
      * @throws IOException if the buffers are too small to hold the results of
      *                     the mapping.
      */
     public void map(Context context, MessageBytes uri,
-            MappingData mappingData) throws IOException {
+                    MappingData mappingData) throws IOException {
 
+        // 快速获取version
         ContextVersion contextVersion =
                 contextObjectToContextVersionMap.get(context);
         uri.toChars();
@@ -730,25 +765,37 @@ public final class Mapper {
 
     /**
      * Map the specified URI.
+     * <p>
+     * 1、调用私有方法internalMap，传入host, uri, version, 结果将会保存在request的mappingData中
+     * 2、查找映射的host
+     * 3、查找映射的context
+     * 4、查找映射的wrapper
+     *
      * @throws IOException
      */
     private final void internalMap(CharChunk host, CharChunk uri,
-            String version, MappingData mappingData) throws IOException {
+                                   String version, MappingData mappingData) throws IOException {
 
         if (mappingData.host != null) {
             // The legacy code (dating down at least to Tomcat 4.1) just
             // skipped all mapping work in this case. That behaviour has a risk
             // of returning an inconsistent result.
             // I do not see a valid use case for it.
+            // 在本例中，遗留代码(至少可以追溯到Tomcat 4.1)跳过了所有映射工作。这种行为有返回不一致结果的风险。
+            // 我没有看到一个有效的用例。
             throw new AssertionError();
         }
 
         // Virtual host mapping
+        // 2 查找映射的host
         MappedHost[] hosts = this.hosts;
+        // 跟mapper的find方法一样，采用二分法查找
         MappedHost mappedHost = exactFindIgnoreCase(hosts, host);
         if (mappedHost == null) {
             // Note: Internally, the Mapper does not use the leading * on a
             //       wildcard host. This is to allow this shortcut.
+            // 注意:在内部，映射器在
+            // 通配符主机上不使用前导*。这是为了允许这个快捷方式。
             int firstDot = host.indexOf('.');
             if (firstDot > -1) {
                 int offset = host.getOffset();
@@ -777,6 +824,7 @@ public final class Mapper {
         uri.setLimit(-1);
 
         // Context mapping
+        // 3 查找映射的context
         ContextList contextList = mappedHost.contextList;
         MappedContext[] contexts = contextList.contexts;
         int pos = find(contexts, uri);
@@ -789,6 +837,7 @@ public final class Mapper {
         int length = -1;
         boolean found = false;
         MappedContext context = null;
+        // 二分查找
         while (pos >= 0) {
             context = contexts[pos];
             if (uri.startsWith(context.name)) {
@@ -846,6 +895,7 @@ public final class Mapper {
         mappingData.contextSlashCount = contextVersion.slashCount;
 
         // Wrapper mapping
+        // 4 查找映射的wrapper
         if (!contextVersion.isPaused()) {
             internalMapWrapper(contextVersion, uri, mappingData);
         }
@@ -855,6 +905,7 @@ public final class Mapper {
 
     /**
      * Wrapper mapping.
+     *
      * @throws IOException if the buffers are too small to hold the results of
      *                     the mapping.
      */
@@ -882,7 +933,7 @@ public final class Mapper {
         MappedWrapper[] wildcardWrappers = contextVersion.wildcardWrappers;
         if (mappingData.wrapper == null) {
             internalMapWildcardWrapper(wildcardWrappers, contextVersion.nesting,
-                                       path, mappingData);
+                    path, mappingData);
             if (mappingData.wrapper != null && mappingData.jspWildCard) {
                 char[] buf = path.getBuffer();
                 if (buf[pathEnd - 1] == '/') {
@@ -893,25 +944,28 @@ public final class Mapper {
                      * Force the context's welcome files, which are interpreted
                      * as JSP files (since they match the url-pattern), to be
                      * considered. See Bugzilla 27664.
+                     *
+                     * 以“/”结尾的路径根据*通配符匹配映射到JSP servlet(例如，在* JSP -property-group的url模式中指定)。
+                     * 强制考虑上下文的欢迎文件，这些文件被解释为JSP文件(因为它们匹配url模式)。看到Bugzilla 27664。* /
                      */
                     mappingData.wrapper = null;
                     checkJspWelcomeFiles = true;
                 } else {
                     // See Bugzilla 27704
                     mappingData.wrapperPath.setChars(buf, path.getStart(),
-                                                     path.getLength());
+                            path.getLength());
                     mappingData.pathInfo.recycle();
                 }
             }
         }
 
-        if(mappingData.wrapper == null && noServletPath &&
+        if (mappingData.wrapper == null && noServletPath &&
                 contextVersion.object.getMapperContextRootRedirectEnabled()) {
             // The path is empty, redirect to "/"
             path.append('/');
             pathEnd = path.getEnd();
             mappingData.redirectPath.setChars
-                (path.getBuffer(), pathOffset, pathEnd - pathOffset);
+                    (path.getBuffer(), pathOffset, pathEnd - pathOffset);
             path.setEnd(pathEnd - 1);
             return;
         }
@@ -932,7 +986,7 @@ public final class Mapper {
             }
             if (checkWelcomeFiles) {
                 for (int i = 0; (i < contextVersion.welcomeResources.length)
-                         && (mappingData.wrapper == null); i++) {
+                        && (mappingData.wrapper == null); i++) {
                     path.setOffset(pathOffset);
                     path.setEnd(pathEnd);
                     path.append(contextVersion.welcomeResources[i], 0,
@@ -945,30 +999,30 @@ public final class Mapper {
                     // Rule 4b -- Welcome resources processing for prefix match
                     if (mappingData.wrapper == null) {
                         internalMapWildcardWrapper
-                            (wildcardWrappers, contextVersion.nesting,
-                             path, mappingData);
+                                (wildcardWrappers, contextVersion.nesting,
+                                        path, mappingData);
                     }
 
                     // Rule 4c -- Welcome resources processing
                     //            for physical folder
                     if (mappingData.wrapper == null
-                        && contextVersion.resources != null) {
+                            && contextVersion.resources != null) {
                         String pathStr = path.toString();
                         WebResource file =
                                 contextVersion.resources.getResource(pathStr);
                         if (file != null && file.isFile()) {
                             internalMapExtensionWrapper(extensionWrappers, path,
-                                                        mappingData, true);
+                                    mappingData, true);
                             if (mappingData.wrapper == null
-                                && contextVersion.defaultWrapper != null) {
+                                    && contextVersion.defaultWrapper != null) {
                                 mappingData.wrapper =
-                                    contextVersion.defaultWrapper.object;
+                                        contextVersion.defaultWrapper.object;
                                 mappingData.requestPath.setChars
-                                    (path.getBuffer(), path.getStart(),
-                                     path.getLength());
+                                        (path.getBuffer(), path.getStart(),
+                                                path.getLength());
                                 mappingData.wrapperPath.setChars
-                                    (path.getBuffer(), path.getStart(),
-                                     path.getLength());
+                                        (path.getBuffer(), path.getStart(),
+                                                path.getLength());
                                 mappingData.requestPath.setString(pathStr);
                                 mappingData.wrapperPath.setString(pathStr);
                             }
@@ -988,6 +1042,10 @@ public final class Mapper {
          * but may not have a physical backing to it. This is for
          * the case of index.jsf, index.do, etc.
          * A watered down version of rule 4
+         *
+         * 欢迎文件处理—现在我们已经查找了具有物理*支持的欢迎文件，
+         * 现在查找列出的扩展映射*，但是它可能没有物理支持。
+         * 这是针对*索引的情况。jsf,指数。规则4的弱化版本
          */
         if (mappingData.wrapper == null) {
             boolean checkWelcomeFiles = checkJspWelcomeFiles;
@@ -997,14 +1055,14 @@ public final class Mapper {
             }
             if (checkWelcomeFiles) {
                 for (int i = 0; (i < contextVersion.welcomeResources.length)
-                         && (mappingData.wrapper == null); i++) {
+                        && (mappingData.wrapper == null); i++) {
                     path.setOffset(pathOffset);
                     path.setEnd(pathEnd);
                     path.append(contextVersion.welcomeResources[i], 0,
-                                contextVersion.welcomeResources[i].length());
+                            contextVersion.welcomeResources[i].length());
                     path.setOffset(servletPath);
                     internalMapExtensionWrapper(extensionWrappers, path,
-                                                mappingData, false);
+                            mappingData, false);
                 }
 
                 path.setOffset(servletPath);
@@ -1013,19 +1071,19 @@ public final class Mapper {
         }
 
 
-        // Rule 7 -- Default servlet
+        // Rule 7 -- Default servlet 1.前置截取静态资源 2.后置承担默认
         if (mappingData.wrapper == null && !checkJspWelcomeFiles) {
             if (contextVersion.defaultWrapper != null) {
                 mappingData.wrapper = contextVersion.defaultWrapper.object;
                 mappingData.requestPath.setChars
-                    (path.getBuffer(), path.getStart(), path.getLength());
+                        (path.getBuffer(), path.getStart(), path.getLength());
                 mappingData.wrapperPath.setChars
-                    (path.getBuffer(), path.getStart(), path.getLength());
+                        (path.getBuffer(), path.getStart(), path.getLength());
                 mappingData.matchType = MappingMatch.DEFAULT;
             }
             // Redirection to a folder
             char[] buf = path.getBuffer();
-            if (contextVersion.resources != null && buf[pathEnd -1 ] != '/') {
+            if (contextVersion.resources != null && buf[pathEnd - 1] != '/') {
                 String pathStr = path.toString();
                 // Note: Check redirect first to save unnecessary getResource()
                 //       call. See BZ 62968.
@@ -1044,7 +1102,7 @@ public final class Mapper {
                         path.setOffset(pathOffset);
                         path.append('/');
                         mappingData.redirectPath.setChars
-                            (path.getBuffer(), path.getStart(), path.getLength());
+                                (path.getBuffer(), path.getStart(), path.getLength());
                     } else {
                         mappingData.requestPath.setString(pathStr);
                         mappingData.wrapperPath.setString(pathStr);
@@ -1065,7 +1123,7 @@ public final class Mapper {
      * Exact mapping.
      */
     private final void internalMapExactWrapper
-        (MappedWrapper[] wrappers, CharChunk path, MappingData mappingData) {
+    (MappedWrapper[] wrappers, CharChunk path, MappingData mappingData) {
         MappedWrapper wrapper = exactFind(wrappers, path);
         if (wrapper != null) {
             mappingData.requestPath.setString(wrapper.name);
@@ -1086,11 +1144,11 @@ public final class Mapper {
 
 
     /**
-     * Wildcard mapping.
+     * Wildcard mapping. 通配符映射。
      */
     private final void internalMapWildcardWrapper
-        (MappedWrapper[] wrappers, int nesting, CharChunk path,
-         MappingData mappingData) {
+    (MappedWrapper[] wrappers, int nesting, CharChunk path,
+     MappingData mappingData) {
 
         int pathEnd = path.getEnd();
 
@@ -1123,12 +1181,12 @@ public final class Mapper {
                 mappingData.wrapperPath.setString(wrappers[pos].name);
                 if (path.getLength() > length) {
                     mappingData.pathInfo.setChars
-                        (path.getBuffer(),
-                         path.getOffset() + length,
-                         path.getLength() - length);
+                            (path.getBuffer(),
+                                    path.getOffset() + length,
+                                    path.getLength() - length);
                 }
                 mappingData.requestPath.setChars
-                    (path.getBuffer(), path.getOffset(), path.getLength());
+                        (path.getBuffer(), path.getOffset(), path.getLength());
                 mappingData.wrapper = wrappers[pos].object;
                 mappingData.jspWildCard = wrappers[pos].jspWildCard;
                 mappingData.matchType = MappingMatch.PATH;
@@ -1140,13 +1198,13 @@ public final class Mapper {
     /**
      * Extension mappings.
      *
-     * @param wrappers          Set of wrappers to check for matches
-     * @param path              Path to map
-     * @param mappingData       Mapping data for result
-     * @param resourceExpected  Is this mapping expecting to find a resource
+     * @param wrappers         Set of wrappers to check for matches
+     * @param path             Path to map
+     * @param mappingData      Mapping data for result
+     * @param resourceExpected Is this mapping expecting to find a resource
      */
     private final void internalMapExtensionWrapper(MappedWrapper[] wrappers,
-            CharChunk path, MappingData mappingData, boolean resourceExpected) {
+                                                   CharChunk path, MappingData mappingData, boolean resourceExpected) {
         char[] buf = path.getBuffer();
         int pathEnd = path.getEnd();
         int servletPath = path.getOffset();
@@ -1189,6 +1247,8 @@ public final class Mapper {
      * Find a map element given its name in a sorted array of map elements.
      * This will return the index for the closest inferior or equal item in the
      * given array.
+     * <p>
+     * 在已排序的映射元素数组中查找给定名称的映射元素。这将返回*给定数组中最近的下等项或相等项的索引。
      */
     private static final <T> int find(MapElement<T>[] map, CharChunk name) {
         return find(map, name, name.getStart(), name.getEnd());
@@ -1199,9 +1259,11 @@ public final class Mapper {
      * Find a map element given its name in a sorted array of map elements.
      * This will return the index for the closest inferior or equal item in the
      * given array.
+     * <p>
+     * 在已排序的映射元素数组中查找给定名称的映射元素。这将返回*给定数组中最近的下等项或相等项的索引。
      */
     private static final <T> int find(MapElement<T>[] map, CharChunk name,
-                                  int start, int end) {
+                                      int start, int end) {
 
         int a = 0;
         int b = map.length - 1;
@@ -1211,7 +1273,7 @@ public final class Mapper {
             return -1;
         }
 
-        if (compare(name, start, end, map[0].name) < 0 ) {
+        if (compare(name, start, end, map[0].name) < 0) {
             return -1;
         }
         if (b == 0) {
@@ -1257,7 +1319,7 @@ public final class Mapper {
      * given array.
      */
     private static final <T> int findIgnoreCase(MapElement<T>[] map, CharChunk name,
-                                  int start, int end) {
+                                                int start, int end) {
 
         int a = 0;
         int b = map.length - 1;
@@ -1266,7 +1328,7 @@ public final class Mapper {
         if (b == -1) {
             return -1;
         }
-        if (compareIgnoreCase(name, start, end, map[0].name) < 0 ) {
+        if (compareIgnoreCase(name, start, end, map[0].name) < 0) {
             return -1;
         }
         if (b == 0) {
@@ -1301,6 +1363,9 @@ public final class Mapper {
      * Find a map element given its name in a sorted array of map elements.
      * This will return the index for the closest inferior or equal item in the
      * given array.
+     * <p>
+     * 在已排序的映射元素数组中查找给定名称的映射元素。这将返回*给定数组中最近的下等项或相等项的索引。
+     *
      * @see #exactFind(MapElement[], String)
      */
     private static final <T> int find(MapElement<T>[] map, String name) {
@@ -1348,10 +1413,13 @@ public final class Mapper {
      * Find a map element given its name in a sorted array of map elements. This
      * will return the element that you were searching for. Otherwise it will
      * return <code>null</code>.
+     * <p>
+     * 在已排序的映射元素数组中查找给定名称的映射元素。这个*将返回您正在搜索的元素。否则它将*返回<code>null</code>。
+     *
      * @see #find(MapElement[], String)
      */
     private static final <T, E extends MapElement<T>> E exactFind(E[] map,
-            String name) {
+                                                                  String name) {
         int pos = find(map, name);
         if (pos >= 0) {
             E result = map[pos];
@@ -1368,7 +1436,7 @@ public final class Mapper {
      * return <code>null</code>.
      */
     private static final <T, E extends MapElement<T>> E exactFind(E[] map,
-            CharChunk name) {
+                                                                  CharChunk name) {
         int pos = find(map, name);
         if (pos >= 0) {
             E result = map[pos];
@@ -1383,6 +1451,7 @@ public final class Mapper {
      * Find a map element given its name in a sorted array of map elements. This
      * will return the element that you were searching for. Otherwise it will
      * return <code>null</code>.
+     *
      * @see #findIgnoreCase(MapElement[], CharChunk)
      */
     private static final <T, E extends MapElement<T>> E exactFindIgnoreCase(
@@ -1433,7 +1502,7 @@ public final class Mapper {
      * Return -1, 0 or +1 if inferior, equal, or superior to the String.
      */
     private static final int compareIgnoreCase(CharChunk name, int start, int end,
-                                     String compareTo) {
+                                               String compareTo) {
         int result = 0;
         char[] c = name.getBuffer();
         int len = compareTo.length();
@@ -1460,6 +1529,8 @@ public final class Mapper {
 
     /**
      * Find the position of the last slash in the given char chunk.
+     * <p>
+     * 查找给定char块中最后一个斜杠的位置。
      */
     private static final int lastSlash(CharChunk name) {
         char[] c = name.getBuffer();
@@ -1479,6 +1550,8 @@ public final class Mapper {
 
     /**
      * Find the position of the nth slash, in the given char chunk.
+     * <p>
+     * 在给定的char块中找到第n个斜杠的位置。
      */
     private static final int nthSlash(CharChunk name, int n) {
         char[] c = name.getBuffer();
@@ -1500,6 +1573,8 @@ public final class Mapper {
 
     /**
      * Return the slash count in a given string.
+     * <p>
+     * 返回给定字符串中的斜杠计数。
      */
     private static final int slashCount(String name) {
         int pos = -1;
@@ -1514,9 +1589,11 @@ public final class Mapper {
     /**
      * Insert into the right place in a sorted MapElement array, and prevent
      * duplicates.
+     * <p>
+     * 插入到排序后的MapElement数组的正确位置，并防止*重复。
      */
     private static final <T> boolean insertMap
-        (MapElement<T>[] oldMap, MapElement<T>[] newMap, MapElement<T> newElement) {
+    (MapElement<T>[] oldMap, MapElement<T>[] newMap, MapElement<T> newElement) {
         int pos = find(oldMap, newElement.name);
         if ((pos != -1) && (newElement.name.equals(oldMap[pos].name))) {
             return false;
@@ -1524,21 +1601,23 @@ public final class Mapper {
         System.arraycopy(oldMap, 0, newMap, 0, pos + 1);
         newMap[pos + 1] = newElement;
         System.arraycopy
-            (oldMap, pos + 1, newMap, pos + 2, oldMap.length - pos - 1);
+                (oldMap, pos + 1, newMap, pos + 2, oldMap.length - pos - 1);
         return true;
     }
 
 
     /**
      * Insert into the right place in a sorted MapElement array.
+     * <p>
+     * 插入到排序后的映射元素数组中的正确位置。
      */
     private static final <T> boolean removeMap
-        (MapElement<T>[] oldMap, MapElement<T>[] newMap, String name) {
+    (MapElement<T>[] oldMap, MapElement<T>[] newMap, String name) {
         int pos = find(oldMap, name);
         if ((pos != -1) && (name.equals(oldMap[pos].name))) {
             System.arraycopy(oldMap, 0, newMap, 0, pos);
             System.arraycopy(oldMap, pos + 1, newMap, pos,
-                             oldMap.length - pos - 1);
+                    oldMap.length - pos - 1);
             return true;
         }
         return false;
@@ -1551,6 +1630,11 @@ public final class Mapper {
      * of use the external form remains "*.apache.org". Any host name passed
      * into this class needs to be passed through this method to rename and
      * wild card host names from the external to internal form.
+     *
+     * 为了简化映射过程，通配符主机内部采用* ".apache.org"形式，而不是"*.apache.org"。
+     * 但是，为了便于使用，外部表单仍然是“*.apache.org”。
+     * 传递给这个类的任何主机名*都需要通过这个方法来重命名和*通配符主机名，
+     * 从外部形式改为内部形式。
      */
     private static String renameWildcardHost(String hostName) {
         if (hostName != null && hostName.startsWith("*.")) {
@@ -1592,6 +1676,8 @@ public final class Mapper {
          * Links to all registered aliases, for easy enumeration. This field
          * is available only in the "real" MappedHost. In an alias this field
          * is <code>null</code>.
+         * <p>
+         * 链接到所有已注册别名，便于枚举。此字段*仅在“真实”MappedHost中可用。在别名中，这个字段*是<code>null</code>。* /
          */
         private final List<MappedHost> aliases;
 
@@ -1669,7 +1755,7 @@ public final class Mapper {
         }
 
         public ContextList addContext(MappedContext mappedContext,
-                int slashCount) {
+                                      int slashCount) {
             MappedContext[] newContexts = new MappedContext[contexts.length + 1];
             if (insertMap(contexts, newContexts, mappedContext)) {
                 return new ContextList(newContexts, Math.max(nesting,
@@ -1700,25 +1786,41 @@ public final class Mapper {
 
         public MappedContext(String name, ContextVersion firstVersion) {
             super(name, null);
-            this.versions = new ContextVersion[] { firstVersion };
+            this.versions = new ContextVersion[]{firstVersion};
         }
     }
 
+    /**
+     * 版本：session未断开链接/应用版本不同
+     */
     protected static final class ContextVersion extends MapElement<Context> {
         public final String path;
         public final int slashCount;
         public final WebResourceRoot resources;
         public String[] welcomeResources;
         public MappedWrapper defaultWrapper = null;
+
+        /**
+         * 默认匹配
+         */
+        /**
+         * 对Wrapper的精确的map
+         */
         public MappedWrapper[] exactWrappers = new MappedWrapper[0];
+        /**
+         * 基于通配符的map
+         */
         public MappedWrapper[] wildcardWrappers = new MappedWrapper[0];
+        /**
+         * 基于拓展名的map
+         */
         public MappedWrapper[] extensionWrappers = new MappedWrapper[0];
         public int nesting = 0;
         private volatile boolean paused;
 
         public ContextVersion(String version, String path, int slashCount,
-                Context context, WebResourceRoot resources,
-                String[] welcomeResources) {
+                              Context context, WebResourceRoot resources,
+                              String[] welcomeResources) {
             super(version, context);
             this.path = path;
             this.slashCount = slashCount;
@@ -1738,13 +1840,16 @@ public final class Mapper {
     // ---------------------------------------------------- Wrapper Inner Class
 
 
+    /**
+     *
+     */
     protected static class MappedWrapper extends MapElement<Wrapper> {
 
         public final boolean jspWildCard;
         public final boolean resourceOnly;
 
         public MappedWrapper(String name, Wrapper wrapper, boolean jspWildCard,
-                boolean resourceOnly) {
+                             boolean resourceOnly) {
             super(name, wrapper);
             this.jspWildCard = jspWildCard;
             this.resourceOnly = resourceOnly;

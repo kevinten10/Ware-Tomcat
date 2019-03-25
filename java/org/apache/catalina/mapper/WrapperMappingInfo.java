@@ -20,6 +20,8 @@ import org.apache.catalina.Wrapper;
 
 /**
  * Encapsulates information used to register a Wrapper mapping.
+ * <p>
+ * 封装用于注册包装器映射的信息。
  */
 public class WrapperMappingInfo {
 
@@ -29,7 +31,7 @@ public class WrapperMappingInfo {
     private final boolean resourceOnly;
 
     public WrapperMappingInfo(String mapping, Wrapper wrapper,
-            boolean jspWildCard, boolean resourceOnly) {
+                              boolean jspWildCard, boolean resourceOnly) {
         this.mapping = mapping;
         this.wrapper = wrapper;
         this.jspWildCard = jspWildCard;
