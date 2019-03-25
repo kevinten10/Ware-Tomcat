@@ -333,6 +333,9 @@ public final class Bootstrap {
      * 之后调用Server.init()，Server初始化时，又会调用其内部的Service的init方法，即调用某一组件的init方法时，将触发其子组件的init方法
      * <p>
      * 执行Bootstrap.load(args)将触发的动作
+     * <p>
+     * 初始化Boostrap的Catalina对象：通过反射生成Catalina对象，并通过反射调用setParentClassLoader方法设置其父 ClassLoader为sharedLoader。
+     * 为什么要用反射，不直接在声明的时候生成对象？使用反射来生成实例的原因是因为在tomcat的发展历史中可以不止Catalina一种启动方式，现在看代码已经没必要了。
      */
     private void load(String[] arguments)
             throws Exception {
@@ -520,6 +523,10 @@ public final class Bootstrap {
     /**
      * Main method and entry point when starting Tomcat via the provided
      * scripts.
+     * <p>
+     * 1. 实例化Boostrap对象，并调用其init方法；
+     * 2. 调用load方法
+     * 3. 调用start方法；
      *
      * @param args Command line arguments to be processed
      */

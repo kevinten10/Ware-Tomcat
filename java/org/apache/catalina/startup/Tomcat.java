@@ -97,15 +97,15 @@ import org.apache.tomcat.util.res.StringManager;
  * <p>
  * Requirements:
  * <ul>
- *   <li>all tomcat classes and possibly servlets are in the classpath.
- *       (for example all is in one big jar, or in eclipse CP, or in
- *        any other combination)</li>
+ * <li>all tomcat classes and possibly servlets are in the classpath.
+ * (for example all is in one big jar, or in eclipse CP, or in
+ * any other combination)</li>
  *
- *   <li>we need one temporary directory for work files</li>
+ * <li>we need one temporary directory for work files</li>
  *
- *   <li>no config file is required. This class provides methods to
- *       use if you have a webapp with a web.xml file, but it is
- *       optional - you can use your own servlets.</li>
+ * <li>no config file is required. This class provides methods to
+ * use if you have a webapp with a web.xml file, but it is
+ * optional - you can use your own servlets.</li>
  * </ul>
  *
  * <p>
@@ -144,9 +144,26 @@ import org.apache.tomcat.util.res.StringManager;
  * This class provides a main() and few simple CLI arguments,
  * see setters for doc. It can be used for simple tests and
  * demo.
+ * <p>
+ * 用于嵌入/单元测试的最小tomcat启动程序。Tomcat支持多种类型的配置和启动——最常见和稳定的是服务器。
+ * 基于xml，在org.apache.catalina.startup.Bootstrap中实现。
+ * 这个类用于嵌入tomcat的应用程序。需求:所有tomcat类以及可能的servlet都在类路径中。
+ * (例如，所有文件都在一个大jar中，或者在eclipse CP中，或者在任何其他组合中)我们需要一个临时目录来存放工作文件，
+ * 不需要配置文件。如果您有一个带有web.xml文件的web应用程序，这个类提供了可以使用的方法，
+ * 但是它是可选的——您可以使用自己的servlet。有多种“添加”方法来配置servlet和web应用程序。
+ * 默认情况下，这些方法创建一个简单的内存安全域并应用它。如果需要更复杂的安全处理，
+ * 可以定义该类的子类。这个类提供了一组方便的方法来配置webapp上下文，
+ * 所有重载的方法都是addWebapp。这些方法创建一个webapp上下文，配置它，然后将其添加到主机。
+ * 它们不使用全局默认web.xml;相反，它们添加一个生命周期侦听器，该侦听器添加标准的DefaultServlet、JSP处理和欢迎文件。
+ * 在复杂的情况下，您可能更喜欢使用普通的Tomcat API来创建web应用程序上下文;
+ * 例如，您可能需要在调用Host.addChild(Container)之前安装一个自定义加载器。
+ * 要复制addWebapp方法的基本行为，可能需要调用该类的两个方法:noDefaultWebXmlPath()和getDefaultWebXmlListener()。
+ * getDefaultWebXmlListener()返回一个LifecycleListener，它添加标准的DefaultServlet、JSP处理和欢迎文件。
+ * 如果您添加了这个侦听器，您必须阻止Tomcat应用任何标准的全局web.xml，并使用…noDefaultWebXmlPath()返回要配置的虚拟路径名，
+ * 以防止ContextConfig试图应用全局web.xml文件。该类提供一个main()和几个简单的CLI参数，参见doc的setter。它可以用于简单的测试和演示。
  *
- * @see <a href="https://svn.apache.org/repos/asf/tomcat/trunk/test/org/apache/catalina/startup/TestTomcat.java">TestTomcat</a>
  * @author Costin Manolache
+ * @see <a href="https://svn.apache.org/repos/asf/tomcat/trunk/test/org/apache/catalina/startup/TestTomcat.java">TestTomcat</a>
  */
 public class Tomcat {
 
@@ -183,12 +200,12 @@ public class Tomcat {
      * If this method is not called then Tomcat will attempt to use these
      * locations in the following order:
      * <ol>
-     *  <li>if set, the catalina.base system property</li>
-     *  <li>if set, the catalina.home system property</li>
-     *  <li>The user.dir system property (the directory where Java was run from)
-     *      where a directory named tomcat.$PORT will be created. $PORT is the
-     *      value configured via {@link #setPort(int)} which defaults to 8080 if
-     *      not set</li>
+     * <li>if set, the catalina.base system property</li>
+     * <li>if set, the catalina.home system property</li>
+     * <li>The user.dir system property (the directory where Java was run from)
+     * where a directory named tomcat.$PORT will be created. $PORT is the
+     * value configured via {@link #setPort(int)} which defaults to 8080 if
+     * not set</li>
      * </ol>
      * The user should ensure that the file permissions for the base directory
      * are appropriate.
@@ -204,6 +221,7 @@ public class Tomcat {
     /**
      * Set the port for the default connector. The default connector will
      * only be created if getConnector is called.
+     *
      * @param port The port number
      */
     public void setPort(int port) {
@@ -213,6 +231,7 @@ public class Tomcat {
     /**
      * The the hostname of the default host, default is
      * 'localhost'.
+     *
      * @param s The default host name
      */
     public void setHostname(String s) {
@@ -228,8 +247,8 @@ public class Tomcat {
      * applied.
      *
      * @param contextPath The context mapping to use, "" for root context.
-     * @param docBase Base directory for the context, for static files.
-     *  Must exist, relative to the server home
+     * @param docBase     Base directory for the context, for static files.
+     *                    Must exist, relative to the server home
      * @return the deployed context
      */
     public Context addWebapp(String contextPath, String docBase) {
@@ -244,11 +263,9 @@ public class Tomcat {
      * instance stops. Note that {@link ExpandWar} provides utility methods that
      * may be used to delete the WAR and/or expanded directory if required.
      *
-     * @param contextPath   The context mapping to use, "" for root context.
-     * @param source        The location from which the WAR should be copied
-     *
+     * @param contextPath The context mapping to use, "" for root context.
+     * @param source      The location from which the WAR should be copied
      * @return The deployed Context
-     *
      * @throws IOException If an I/O error occurs while copying the WAR file
      *                     from the specified URL to the appBase
      */
@@ -280,7 +297,7 @@ public class Tomcat {
         URLConnection uConn = source.openConnection();
 
         try (InputStream is = uConn.getInputStream();
-                OutputStream os = new FileOutputStream(targetWar)) {
+             OutputStream os = new FileOutputStream(targetWar)) {
             IOTools.flow(is, os);
         }
 
@@ -326,8 +343,8 @@ public class Tomcat {
      * TODO: add the rest
      *
      * @param contextPath The context mapping to use, "" for root context.
-     * @param docBase Base directory for the context, for static files.
-     *  Must exist, relative to the server home
+     * @param docBase     Base directory for the context, for static files.
+     *                    Must exist, relative to the server home
      * @return the deployed context
      */
     public Context addContext(String contextPath, String docBase) {
@@ -342,34 +359,35 @@ public class Tomcat {
      * Servlet as param - this one can be used if the servlet is not
      * commonly used, and want to avoid loading all deps.
      * ( for example: jsp servlet )
-     *
+     * <p>
      * You can customize the returned servlet, ex:
-     *  <pre>
+     * <pre>
      *    wrapper.addInitParameter("name", "value");
      *  </pre>
      *
-     * @param contextPath   Context to add Servlet to
-     * @param servletName   Servlet name (used in mappings)
-     * @param servletClass  The class to be used for the Servlet
+     * @param contextPath  Context to add Servlet to
+     * @param servletName  Servlet name (used in mappings)
+     * @param servletClass The class to be used for the Servlet
      * @return The wrapper for the servlet
      */
     public Wrapper addServlet(String contextPath,
-            String servletName,
-            String servletClass) {
+                              String servletName,
+                              String servletClass) {
         Container ctx = getHost().findChild(contextPath);
         return addServlet((Context) ctx, servletName, servletClass);
     }
 
     /**
      * Static version of {@link #addServlet(String, String, String)}
-     * @param ctx           Context to add Servlet to
-     * @param servletName   Servlet name (used in mappings)
-     * @param servletClass  The class to be used for the Servlet
+     *
+     * @param ctx          Context to add Servlet to
+     * @param servletName  Servlet name (used in mappings)
+     * @param servletClass The class to be used for the Servlet
      * @return The wrapper for the servlet
      */
     public static Wrapper addServlet(Context ctx,
-                                      String servletName,
-                                      String servletClass) {
+                                     String servletName,
+                                     String servletClass) {
         // will do class for name and set init params
         Wrapper sw = ctx.createWrapper();
         sw.setServletClass(servletClass);
@@ -382,28 +400,30 @@ public class Tomcat {
     /**
      * Add an existing Servlet to the context with no class.forName or
      * initialisation.
-     * @param contextPath   Context to add Servlet to
-     * @param servletName   Servlet name (used in mappings)
-     * @param servlet       The Servlet to add
+     *
+     * @param contextPath Context to add Servlet to
+     * @param servletName Servlet name (used in mappings)
+     * @param servlet     The Servlet to add
      * @return The wrapper for the servlet
      */
     public Wrapper addServlet(String contextPath,
-            String servletName,
-            Servlet servlet) {
+                              String servletName,
+                              Servlet servlet) {
         Container ctx = getHost().findChild(contextPath);
         return addServlet((Context) ctx, servletName, servlet);
     }
 
     /**
      * Static version of {@link #addServlet(String, String, Servlet)}.
-     * @param ctx           Context to add Servlet to
-     * @param servletName   Servlet name (used in mappings)
-     * @param servlet       The Servlet to add
+     *
+     * @param ctx         Context to add Servlet to
+     * @param servletName Servlet name (used in mappings)
+     * @param servlet     The Servlet to add
      * @return The wrapper for the servlet
      */
     public static Wrapper addServlet(Context ctx,
-                                      String servletName,
-                                      Servlet servlet) {
+                                     String servletName,
+                                     Servlet servlet) {
         // will do class for name and set init params
         Wrapper sw = new ExistingStandardWrapper(servlet);
         sw.setName(servletName);
@@ -420,6 +440,7 @@ public class Tomcat {
      * SSL certificates, etc).
      * If no configuration source is specified, it will use the default
      * locations for these files.
+     *
      * @param source The configuration source
      */
     public void init(ConfigurationSource source) {
@@ -481,6 +502,7 @@ public class Tomcat {
     /**
      * Add a user for the in-memory realm. All created apps use this
      * by default, can be replaced using setRealm().
+     *
      * @param user The user name
      * @param pass The password
      */
@@ -490,9 +512,10 @@ public class Tomcat {
 
     /**
      * Add a role to a user.
-     * @see #addUser(String, String)
+     *
      * @param user The user name
      * @param role The role name
+     * @see #addUser(String, String)
      */
     public void addRole(String user, String role) {
         List<String> roles = userRoles.get(user);
@@ -533,6 +556,7 @@ public class Tomcat {
     /**
      * Set the specified connector in the service, if it is not already
      * present.
+     *
      * @param connector The connector instance to add
      */
     public void setConnector(Connector connector) {
@@ -551,6 +575,7 @@ public class Tomcat {
     /**
      * Get the service object. Can be used to add more
      * connectors and few other global settings.
+     *
      * @return The service
      */
     public Service getService() {
@@ -591,6 +616,7 @@ public class Tomcat {
 
     /**
      * Access to the engine, for further customization.
+     *
      * @return The engine
      */
     public Engine getEngine() {
@@ -599,7 +625,7 @@ public class Tomcat {
             return service.getContainer();
         }
         Engine engine = new StandardEngine();
-        engine.setName( "Tomcat" );
+        engine.setName("Tomcat");
         engine.setDefaultHost(hostname);
         engine.setRealm(createDefaultRealm());
         service.setContainer(engine);
@@ -609,6 +635,7 @@ public class Tomcat {
     /**
      * Get the server object. You can add listeners and few more
      * customizations. JNDI is disabled by default.
+     *
      * @return The Server
      */
     public Server getServer() {
@@ -626,7 +653,7 @@ public class Tomcat {
         // Set configuration source
         ConfigFileLoader.setSource(new CatalinaBaseConfigurationSource(new File(basedir), null));
 
-        server.setPort( -1 );
+        server.setPort(-1);
 
         Service service = new StandardService();
         service.setName("Tomcat");
@@ -635,10 +662,10 @@ public class Tomcat {
     }
 
     /**
-     * @param host The host in which the context will be deployed
+     * @param host        The host in which the context will be deployed
      * @param contextPath The context mapping to use, "" for root context.
-     * @param dir Base directory for the context, for static files.
-     *  Must exist, relative to the server home
+     * @param dir         Base directory for the context, for static files.
+     *                    Must exist, relative to the server home
      * @return the deployed context
      * @see #addContext(String, String)
      */
@@ -647,16 +674,16 @@ public class Tomcat {
     }
 
     /**
-     * @param host The host in which the context will be deployed
+     * @param host        The host in which the context will be deployed
      * @param contextPath The context mapping to use, "" for root context.
      * @param contextName The context name
-     * @param dir Base directory for the context, for static files.
-     *  Must exist, relative to the server home
+     * @param dir         Base directory for the context, for static files.
+     *                    Must exist, relative to the server home
      * @return the deployed context
      * @see #addContext(String, String)
      */
     public Context addContext(Host host, String contextPath, String contextName,
-            String dir) {
+                              String dir) {
         silence(host, contextName);
         Context ctx = createContext(host, contextPath);
         ctx.setName(contextName);
@@ -673,10 +700,10 @@ public class Tomcat {
     }
 
     /**
-     * @param host The host in which the context will be deployed
+     * @param host        The host in which the context will be deployed
      * @param contextPath The context mapping to use, "" for root context.
-     * @param docBase Base directory for the context, for static files.
-     *  Must exist, relative to the server home
+     * @param docBase     Base directory for the context, for static files.
+     *                    Must exist, relative to the server home
      * @return the deployed context
      * @see #addWebapp(String, String)
      */
@@ -695,16 +722,16 @@ public class Tomcat {
     }
 
     /**
-     * @param host The host in which the context will be deployed
+     * @param host        The host in which the context will be deployed
      * @param contextPath The context mapping to use, "" for root context.
-     * @param docBase Base directory for the context, for static files.
-     *  Must exist, relative to the server home
-     * @param config Custom context configurator helper
+     * @param docBase     Base directory for the context, for static files.
+     *                    Must exist, relative to the server home
+     * @param config      Custom context configurator helper
      * @return the deployed context
      * @see #addWebapp(String, String)
      */
     public Context addWebapp(Host host, String contextPath, String docBase,
-            LifecycleListener config) {
+                             LifecycleListener config) {
 
         silence(host, contextPath);
 
@@ -739,6 +766,7 @@ public class Tomcat {
      * {@link Context#addLifecycleListener(LifecycleListener)} and then pass the
      * result of {@link #noDefaultWebXmlPath()} to
      * {@link ContextConfig#setDefaultWebXml(String)}.
+     *
      * @return a listener object that configures default JSP processing.
      */
     public LifecycleListener getDefaultWebXmlListener() {
@@ -761,6 +789,7 @@ public class Tomcat {
      * one. The Realm created here will be added to the Engine by default and
      * may be replaced at the Engine level or over-ridden (as per normal Tomcat
      * behaviour) at the Host or Context level.
+     *
      * @return a realm instance
      */
     protected Realm createDefaultRealm() {
@@ -850,24 +879,25 @@ public class Tomcat {
                 server.getCatalinaHome().getPath());
     }
 
-    static final String[] silences = new String[] {
-        "org.apache.coyote.http11.Http11NioProtocol",
-        "org.apache.catalina.core.StandardService",
-        "org.apache.catalina.core.StandardEngine",
-        "org.apache.catalina.startup.ContextConfig",
-        "org.apache.catalina.core.ApplicationContext",
-        "org.apache.catalina.core.AprLifecycleListener"
+    static final String[] silences = new String[]{
+            "org.apache.coyote.http11.Http11NioProtocol",
+            "org.apache.catalina.core.StandardService",
+            "org.apache.catalina.core.StandardEngine",
+            "org.apache.catalina.startup.ContextConfig",
+            "org.apache.catalina.core.ApplicationContext",
+            "org.apache.catalina.core.AprLifecycleListener"
     };
 
     private boolean silent = false;
 
     /**
      * Controls if the loggers will be silenced or not.
-     * @param silent    <code>true</code> sets the log level to WARN for the
-     *                  loggers that log information on Tomcat start up. This
-     *                  prevents the usual startup information being logged.
-     *                  <code>false</code> sets the log level to the default
-     *                  level of INFO.
+     *
+     * @param silent <code>true</code> sets the log level to WARN for the
+     *               loggers that log information on Tomcat start up. This
+     *               prevents the usual startup information being logged.
+     *               <code>false</code> sets the log level to the default
+     *               level of INFO.
      */
     public void setSilent(boolean silent) {
         this.silent = silent;
@@ -900,6 +930,7 @@ public class Tomcat {
      * a <code>false</code> value prior to calling addWebapp() allows to opt out of
      * the default settings. In that event you will need to add the configurations
      * yourself,  either programmatically or by using web.xml deployment descriptors.
+     *
      * @param addDefaultWebXmlToWebapp <code>false</code> will prevent the class from
      *                                 automatically adding the default settings when
      *                                 calling addWebapp().
@@ -907,7 +938,7 @@ public class Tomcat {
      *                                 and is the default behavior.
      * @see #addWebapp(Host, String, String, LifecycleListener)
      */
-    public void setAddDefaultWebXmlToWebapp(boolean addDefaultWebXmlToWebapp){
+    public void setAddDefaultWebXmlToWebapp(boolean addDefaultWebXmlToWebapp) {
         this.addDefaultWebXmlToWebapp = addDefaultWebXmlToWebapp;
     }
 
@@ -945,11 +976,9 @@ public class Tomcat {
      * The default constructor of the class that was configured with
      * {@link StandardHost#setContextClass(String)} will be used
      *
-     * @param host
-     *            host for which the {@link Context} should be created, or
-     *            <code>null</code> if default host should be used
-     * @param url
-     *            path of the webapp which should get the {@link Context}
+     * @param host host for which the {@link Context} should be created, or
+     *             <code>null</code> if default host should be used
+     * @param url  path of the webapp which should get the {@link Context}
      * @return newly created {@link Context}
      */
     private Context createContext(Host host, String url) {
@@ -963,7 +992,7 @@ public class Tomcat {
         try {
             return (Context) Class.forName(contextClass).getConstructor()
                     .newInstance();
-        } catch (ReflectiveOperationException  | IllegalArgumentException | SecurityException e) {
+        } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
             throw new IllegalArgumentException(sm.getString("tomcat.noContextClass", contextClass, host, url), e);
         }
     }
@@ -972,7 +1001,6 @@ public class Tomcat {
      * Enables JNDI naming which is disabled by default. Server must implement
      * {@link Lifecycle} in order for the {@link NamingContextListener} to be
      * used.
-     *
      */
     public void enableNaming() {
         // Make sure getServer() has been called as that is where naming is
@@ -984,7 +1012,7 @@ public class Tomcat {
 
         String value = "org.apache.naming";
         String oldValue =
-            System.getProperty(javax.naming.Context.URL_PKG_PREFIXES);
+                System.getProperty(javax.naming.Context.URL_PKG_PREFIXES);
         if (oldValue != null) {
             if (oldValue.contains(value)) {
                 value = oldValue;
@@ -995,22 +1023,22 @@ public class Tomcat {
         System.setProperty(javax.naming.Context.URL_PKG_PREFIXES, value);
 
         value = System.getProperty
-            (javax.naming.Context.INITIAL_CONTEXT_FACTORY);
+                (javax.naming.Context.INITIAL_CONTEXT_FACTORY);
         if (value == null) {
             System.setProperty
-                (javax.naming.Context.INITIAL_CONTEXT_FACTORY,
-                 "org.apache.naming.java.javaURLContextFactory");
+                    (javax.naming.Context.INITIAL_CONTEXT_FACTORY,
+                            "org.apache.naming.java.javaURLContextFactory");
         }
     }
 
     /**
      * Provide default configuration for a context. This is the programmatic
      * equivalent of the default web.xml.
+     * <p>
+     * TODO: in normal Tomcat, if default-web.xml is not found, use this
+     * method
      *
-     *  TODO: in normal Tomcat, if default-web.xml is not found, use this
-     *  method
-     *
-     * @param contextPath   The context to set the defaults for
+     * @param contextPath The context to set the defaults for
      */
     public void initWebappDefaults(String contextPath) {
         Container ctx = getHost().findChild(contextPath);
@@ -1019,7 +1047,8 @@ public class Tomcat {
 
     /**
      * Static version of {@link #initWebappDefaults(String)}
-     * @param ctx   The context to set the defaults for
+     *
+     * @param ctx The context to set the defaults for
      */
     public static void initWebappDefaults(Context ctx) {
         // Default servlet
@@ -1044,7 +1073,7 @@ public class Tomcat {
         ctx.setSessionTimeout(30);
 
         // MIME mappings
-        for (int i = 0; i < DEFAULT_MIME_MAPPINGS.length;) {
+        for (int i = 0; i < DEFAULT_MIME_MAPPINGS.length; ) {
             ctx.addMimeMapping(DEFAULT_MIME_MAPPINGS[i++],
                     DEFAULT_MIME_MAPPINGS[i++]);
         }
@@ -1112,7 +1141,7 @@ public class Tomcat {
         private final Servlet existing;
 
         @SuppressWarnings("deprecation")
-        public ExistingStandardWrapper( Servlet existing ) {
+        public ExistingStandardWrapper(Servlet existing) {
             this.existing = existing;
             if (existing instanceof javax.servlet.SingleThreadModel) {
                 singleThreadModel = true;
@@ -1150,18 +1179,22 @@ public class Tomcat {
                 return existing;
             }
         }
+
         @Override
         public long getAvailable() {
             return 0;
         }
+
         @Override
         public boolean isUnavailable() {
             return false;
         }
+
         @Override
         public Servlet getServlet() {
             return existing;
         }
+
         @Override
         public String getServletClass() {
             return existing.getClass().getName();
@@ -1175,176 +1208,176 @@ public class Tomcat {
      * is encoded.
      */
     private static final String[] DEFAULT_MIME_MAPPINGS = {
-        "abs", "audio/x-mpeg",
-        "ai", "application/postscript",
-        "aif", "audio/x-aiff",
-        "aifc", "audio/x-aiff",
-        "aiff", "audio/x-aiff",
-        "aim", "application/x-aim",
-        "art", "image/x-jg",
-        "asf", "video/x-ms-asf",
-        "asx", "video/x-ms-asf",
-        "au", "audio/basic",
-        "avi", "video/x-msvideo",
-        "avx", "video/x-rad-screenplay",
-        "bcpio", "application/x-bcpio",
-        "bin", "application/octet-stream",
-        "bmp", "image/bmp",
-        "body", "text/html",
-        "cdf", "application/x-cdf",
-        "cer", "application/pkix-cert",
-        "class", "application/java",
-        "cpio", "application/x-cpio",
-        "csh", "application/x-csh",
-        "css", "text/css",
-        "dib", "image/bmp",
-        "doc", "application/msword",
-        "dtd", "application/xml-dtd",
-        "dv", "video/x-dv",
-        "dvi", "application/x-dvi",
-        "eps", "application/postscript",
-        "etx", "text/x-setext",
-        "exe", "application/octet-stream",
-        "gif", "image/gif",
-        "gtar", "application/x-gtar",
-        "gz", "application/x-gzip",
-        "hdf", "application/x-hdf",
-        "hqx", "application/mac-binhex40",
-        "htc", "text/x-component",
-        "htm", "text/html",
-        "html", "text/html",
-        "ief", "image/ief",
-        "jad", "text/vnd.sun.j2me.app-descriptor",
-        "jar", "application/java-archive",
-        "java", "text/x-java-source",
-        "jnlp", "application/x-java-jnlp-file",
-        "jpe", "image/jpeg",
-        "jpeg", "image/jpeg",
-        "jpg", "image/jpeg",
-        "js", "application/javascript",
-        "jsf", "text/plain",
-        "jspf", "text/plain",
-        "kar", "audio/midi",
-        "latex", "application/x-latex",
-        "m3u", "audio/x-mpegurl",
-        "mac", "image/x-macpaint",
-        "man", "text/troff",
-        "mathml", "application/mathml+xml",
-        "me", "text/troff",
-        "mid", "audio/midi",
-        "midi", "audio/midi",
-        "mif", "application/x-mif",
-        "mov", "video/quicktime",
-        "movie", "video/x-sgi-movie",
-        "mp1", "audio/mpeg",
-        "mp2", "audio/mpeg",
-        "mp3", "audio/mpeg",
-        "mp4", "video/mp4",
-        "mpa", "audio/mpeg",
-        "mpe", "video/mpeg",
-        "mpeg", "video/mpeg",
-        "mpega", "audio/x-mpeg",
-        "mpg", "video/mpeg",
-        "mpv2", "video/mpeg2",
-        "nc", "application/x-netcdf",
-        "oda", "application/oda",
-        "odb", "application/vnd.oasis.opendocument.database",
-        "odc", "application/vnd.oasis.opendocument.chart",
-        "odf", "application/vnd.oasis.opendocument.formula",
-        "odg", "application/vnd.oasis.opendocument.graphics",
-        "odi", "application/vnd.oasis.opendocument.image",
-        "odm", "application/vnd.oasis.opendocument.text-master",
-        "odp", "application/vnd.oasis.opendocument.presentation",
-        "ods", "application/vnd.oasis.opendocument.spreadsheet",
-        "odt", "application/vnd.oasis.opendocument.text",
-        "otg", "application/vnd.oasis.opendocument.graphics-template",
-        "oth", "application/vnd.oasis.opendocument.text-web",
-        "otp", "application/vnd.oasis.opendocument.presentation-template",
-        "ots", "application/vnd.oasis.opendocument.spreadsheet-template ",
-        "ott", "application/vnd.oasis.opendocument.text-template",
-        "ogx", "application/ogg",
-        "ogv", "video/ogg",
-        "oga", "audio/ogg",
-        "ogg", "audio/ogg",
-        "spx", "audio/ogg",
-        "flac", "audio/flac",
-        "anx", "application/annodex",
-        "axa", "audio/annodex",
-        "axv", "video/annodex",
-        "xspf", "application/xspf+xml",
-        "pbm", "image/x-portable-bitmap",
-        "pct", "image/pict",
-        "pdf", "application/pdf",
-        "pgm", "image/x-portable-graymap",
-        "pic", "image/pict",
-        "pict", "image/pict",
-        "pls", "audio/x-scpls",
-        "png", "image/png",
-        "pnm", "image/x-portable-anymap",
-        "pnt", "image/x-macpaint",
-        "ppm", "image/x-portable-pixmap",
-        "ppt", "application/vnd.ms-powerpoint",
-        "pps", "application/vnd.ms-powerpoint",
-        "ps", "application/postscript",
-        "psd", "image/vnd.adobe.photoshop",
-        "qt", "video/quicktime",
-        "qti", "image/x-quicktime",
-        "qtif", "image/x-quicktime",
-        "ras", "image/x-cmu-raster",
-        "rdf", "application/rdf+xml",
-        "rgb", "image/x-rgb",
-        "rm", "application/vnd.rn-realmedia",
-        "roff", "text/troff",
-        "rtf", "application/rtf",
-        "rtx", "text/richtext",
-        "sh", "application/x-sh",
-        "shar", "application/x-shar",
-        /*"shtml", "text/x-server-parsed-html",*/
-        "sit", "application/x-stuffit",
-        "snd", "audio/basic",
-        "src", "application/x-wais-source",
-        "sv4cpio", "application/x-sv4cpio",
-        "sv4crc", "application/x-sv4crc",
-        "svg", "image/svg+xml",
-        "svgz", "image/svg+xml",
-        "swf", "application/x-shockwave-flash",
-        "t", "text/troff",
-        "tar", "application/x-tar",
-        "tcl", "application/x-tcl",
-        "tex", "application/x-tex",
-        "texi", "application/x-texinfo",
-        "texinfo", "application/x-texinfo",
-        "tif", "image/tiff",
-        "tiff", "image/tiff",
-        "tr", "text/troff",
-        "tsv", "text/tab-separated-values",
-        "txt", "text/plain",
-        "ulw", "audio/basic",
-        "ustar", "application/x-ustar",
-        "vxml", "application/voicexml+xml",
-        "xbm", "image/x-xbitmap",
-        "xht", "application/xhtml+xml",
-        "xhtml", "application/xhtml+xml",
-        "xls", "application/vnd.ms-excel",
-        "xml", "application/xml",
-        "xpm", "image/x-xpixmap",
-        "xsl", "application/xml",
-        "xslt", "application/xslt+xml",
-        "xul", "application/vnd.mozilla.xul+xml",
-        "xwd", "image/x-xwindowdump",
-        "vsd", "application/vnd.visio",
-        "wav", "audio/x-wav",
-        "wbmp", "image/vnd.wap.wbmp",
-        "wml", "text/vnd.wap.wml",
-        "wmlc", "application/vnd.wap.wmlc",
-        "wmls", "text/vnd.wap.wmlsc",
-        "wmlscriptc", "application/vnd.wap.wmlscriptc",
-        "wmv", "video/x-ms-wmv",
-        "wrl", "model/vrml",
-        "wspolicy", "application/wspolicy+xml",
-        "Z", "application/x-compress",
-        "z", "application/x-compress",
-        "zip", "application/zip"
+            "abs", "audio/x-mpeg",
+            "ai", "application/postscript",
+            "aif", "audio/x-aiff",
+            "aifc", "audio/x-aiff",
+            "aiff", "audio/x-aiff",
+            "aim", "application/x-aim",
+            "art", "image/x-jg",
+            "asf", "video/x-ms-asf",
+            "asx", "video/x-ms-asf",
+            "au", "audio/basic",
+            "avi", "video/x-msvideo",
+            "avx", "video/x-rad-screenplay",
+            "bcpio", "application/x-bcpio",
+            "bin", "application/octet-stream",
+            "bmp", "image/bmp",
+            "body", "text/html",
+            "cdf", "application/x-cdf",
+            "cer", "application/pkix-cert",
+            "class", "application/java",
+            "cpio", "application/x-cpio",
+            "csh", "application/x-csh",
+            "css", "text/css",
+            "dib", "image/bmp",
+            "doc", "application/msword",
+            "dtd", "application/xml-dtd",
+            "dv", "video/x-dv",
+            "dvi", "application/x-dvi",
+            "eps", "application/postscript",
+            "etx", "text/x-setext",
+            "exe", "application/octet-stream",
+            "gif", "image/gif",
+            "gtar", "application/x-gtar",
+            "gz", "application/x-gzip",
+            "hdf", "application/x-hdf",
+            "hqx", "application/mac-binhex40",
+            "htc", "text/x-component",
+            "htm", "text/html",
+            "html", "text/html",
+            "ief", "image/ief",
+            "jad", "text/vnd.sun.j2me.app-descriptor",
+            "jar", "application/java-archive",
+            "java", "text/x-java-source",
+            "jnlp", "application/x-java-jnlp-file",
+            "jpe", "image/jpeg",
+            "jpeg", "image/jpeg",
+            "jpg", "image/jpeg",
+            "js", "application/javascript",
+            "jsf", "text/plain",
+            "jspf", "text/plain",
+            "kar", "audio/midi",
+            "latex", "application/x-latex",
+            "m3u", "audio/x-mpegurl",
+            "mac", "image/x-macpaint",
+            "man", "text/troff",
+            "mathml", "application/mathml+xml",
+            "me", "text/troff",
+            "mid", "audio/midi",
+            "midi", "audio/midi",
+            "mif", "application/x-mif",
+            "mov", "video/quicktime",
+            "movie", "video/x-sgi-movie",
+            "mp1", "audio/mpeg",
+            "mp2", "audio/mpeg",
+            "mp3", "audio/mpeg",
+            "mp4", "video/mp4",
+            "mpa", "audio/mpeg",
+            "mpe", "video/mpeg",
+            "mpeg", "video/mpeg",
+            "mpega", "audio/x-mpeg",
+            "mpg", "video/mpeg",
+            "mpv2", "video/mpeg2",
+            "nc", "application/x-netcdf",
+            "oda", "application/oda",
+            "odb", "application/vnd.oasis.opendocument.database",
+            "odc", "application/vnd.oasis.opendocument.chart",
+            "odf", "application/vnd.oasis.opendocument.formula",
+            "odg", "application/vnd.oasis.opendocument.graphics",
+            "odi", "application/vnd.oasis.opendocument.image",
+            "odm", "application/vnd.oasis.opendocument.text-master",
+            "odp", "application/vnd.oasis.opendocument.presentation",
+            "ods", "application/vnd.oasis.opendocument.spreadsheet",
+            "odt", "application/vnd.oasis.opendocument.text",
+            "otg", "application/vnd.oasis.opendocument.graphics-template",
+            "oth", "application/vnd.oasis.opendocument.text-web",
+            "otp", "application/vnd.oasis.opendocument.presentation-template",
+            "ots", "application/vnd.oasis.opendocument.spreadsheet-template ",
+            "ott", "application/vnd.oasis.opendocument.text-template",
+            "ogx", "application/ogg",
+            "ogv", "video/ogg",
+            "oga", "audio/ogg",
+            "ogg", "audio/ogg",
+            "spx", "audio/ogg",
+            "flac", "audio/flac",
+            "anx", "application/annodex",
+            "axa", "audio/annodex",
+            "axv", "video/annodex",
+            "xspf", "application/xspf+xml",
+            "pbm", "image/x-portable-bitmap",
+            "pct", "image/pict",
+            "pdf", "application/pdf",
+            "pgm", "image/x-portable-graymap",
+            "pic", "image/pict",
+            "pict", "image/pict",
+            "pls", "audio/x-scpls",
+            "png", "image/png",
+            "pnm", "image/x-portable-anymap",
+            "pnt", "image/x-macpaint",
+            "ppm", "image/x-portable-pixmap",
+            "ppt", "application/vnd.ms-powerpoint",
+            "pps", "application/vnd.ms-powerpoint",
+            "ps", "application/postscript",
+            "psd", "image/vnd.adobe.photoshop",
+            "qt", "video/quicktime",
+            "qti", "image/x-quicktime",
+            "qtif", "image/x-quicktime",
+            "ras", "image/x-cmu-raster",
+            "rdf", "application/rdf+xml",
+            "rgb", "image/x-rgb",
+            "rm", "application/vnd.rn-realmedia",
+            "roff", "text/troff",
+            "rtf", "application/rtf",
+            "rtx", "text/richtext",
+            "sh", "application/x-sh",
+            "shar", "application/x-shar",
+            /*"shtml", "text/x-server-parsed-html",*/
+            "sit", "application/x-stuffit",
+            "snd", "audio/basic",
+            "src", "application/x-wais-source",
+            "sv4cpio", "application/x-sv4cpio",
+            "sv4crc", "application/x-sv4crc",
+            "svg", "image/svg+xml",
+            "svgz", "image/svg+xml",
+            "swf", "application/x-shockwave-flash",
+            "t", "text/troff",
+            "tar", "application/x-tar",
+            "tcl", "application/x-tcl",
+            "tex", "application/x-tex",
+            "texi", "application/x-texinfo",
+            "texinfo", "application/x-texinfo",
+            "tif", "image/tiff",
+            "tiff", "image/tiff",
+            "tr", "text/troff",
+            "tsv", "text/tab-separated-values",
+            "txt", "text/plain",
+            "ulw", "audio/basic",
+            "ustar", "application/x-ustar",
+            "vxml", "application/voicexml+xml",
+            "xbm", "image/x-xbitmap",
+            "xht", "application/xhtml+xml",
+            "xhtml", "application/xhtml+xml",
+            "xls", "application/vnd.ms-excel",
+            "xml", "application/xml",
+            "xpm", "image/x-xpixmap",
+            "xsl", "application/xml",
+            "xslt", "application/xslt+xml",
+            "xul", "application/vnd.mozilla.xul+xml",
+            "xwd", "image/x-xwindowdump",
+            "vsd", "application/vnd.visio",
+            "wav", "audio/x-wav",
+            "wbmp", "image/vnd.wap.wbmp",
+            "wml", "text/vnd.wap.wml",
+            "wmlc", "application/vnd.wap.wmlc",
+            "wmls", "text/vnd.wap.wmlsc",
+            "wmlscriptc", "application/vnd.wap.wmlscriptc",
+            "wmv", "video/x-ms-wmv",
+            "wrl", "model/vrml",
+            "wspolicy", "application/wspolicy+xml",
+            "Z", "application/x-compress",
+            "z", "application/x-compress",
+            "zip", "application/zip"
     };
 
     protected URL getWebappConfigFile(String path, String contextName) {
@@ -1386,6 +1419,9 @@ public class Tomcat {
 
     /**
      * Main executable method for use with a Maven packager.
+     * <p>
+     * 与Maven打包程序一起使用的主要可执行方法。
+     *
      * @param args the command line arguments
      * @throws Exception if an error occurs
      */
@@ -1396,6 +1432,7 @@ public class Tomcat {
         tomcat.init(new ConfigurationSource() {
             protected final File userDir = new File(System.getProperty("user.dir"));
             protected final URI userDirUri = userDir.toURI();
+
             @Override
             public Resource getResource(String name) throws IOException {
                 File f = new File(name);
@@ -1408,6 +1445,7 @@ public class Tomcat {
                     throw new FileNotFoundException(name);
                 }
             }
+
             @Override
             public URI getURI(String name) {
                 File f = new File(name);
