@@ -29,14 +29,17 @@ public interface Executor extends java.util.concurrent.Executor, Lifecycle {
      * If no threads are available, it will be added to the work queue.
      * If the work queue is full, the system will wait for the specified
      * time until it throws a RejectedExecutionException
+     * <p>
+     * 在将来的某个时候执行给定的命令。命令可以在新线程、池化线程或调用线程中执行，具体由执行器实现决定。
+     * 如果没有可用的线程，它将被添加到工作队列中。如果工作队列已满，系统将等待指定的时间，
+     * 直到抛出RejectedExecutionException
      *
      * @param command the runnable task
      * @param timeout the length of time to wait for the task to complete
      * @param unit    the units in which timeout is expressed
-     *
      * @throws java.util.concurrent.RejectedExecutionException if this task
-     * cannot be accepted for execution - the queue is full
-     * @throws NullPointerException if command or unit is null
+     *                                                         cannot be accepted for execution - the queue is full
+     * @throws NullPointerException                            if command or unit is null
      */
     void execute(Runnable command, long timeout, TimeUnit unit);
 }

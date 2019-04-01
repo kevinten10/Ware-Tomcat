@@ -29,6 +29,9 @@ import org.apache.tomcat.util.res.StringManager;
  * executor. If you use a normal queue, the executor will spawn threads when
  * there are idle threads and you wont be able to force items onto the queue
  * itself.
+ * <p>
+ * 作为任务队列，特别设计为使用线程池执行器运行。任务队列经过优化，以正确利用线程池执行器中的线程。
+ * 如果使用普通队列，执行器将在有空闲线程时派生线程，并且无法将项强制到队列本身。
  */
 public class TaskQueue extends LinkedBlockingQueue<Runnable> {
 
@@ -58,31 +61,42 @@ public class TaskQueue extends LinkedBlockingQueue<Runnable> {
         parent = tp;
     }
 
+    /**
+     * 将项强制放到队列中，如果任务被拒绝，则使用该队列
+     */
     public boolean force(Runnable o) {
-        if ( parent==null || parent.isShutdown() ) throw new RejectedExecutionException(sm.getString("taskQueue.notRunning"));
+        if (parent == null || parent.isShutdown())
+            throw new RejectedExecutionException(sm.getString("taskQueue.notRunning"));
         return super.offer(o); //forces the item onto the queue, to be used if the task is rejected
     }
 
+    /**
+     * 将项强制放到队列中，如果任务被拒绝，则使用该队列
+     */
     public boolean force(Runnable o, long timeout, TimeUnit unit) throws InterruptedException {
-        if ( parent==null || parent.isShutdown() ) throw new RejectedExecutionException(sm.getString("taskQueue.notRunning"));
-        return super.offer(o,timeout,unit); //forces the item onto the queue, to be used if the task is rejected
+        if (parent == null || parent.isShutdown())
+            throw new RejectedExecutionException(sm.getString("taskQueue.notRunning"));
+        return super.offer(o, timeout, unit); //forces the item onto the queue, to be used if the task is rejected
     }
 
     @Override
     public boolean offer(Runnable o) {
-      //we can't do any checks
-        if (parent==null) return super.offer(o);
+        //we can't do any checks
+        if (parent == null) return super.offer(o);
         //we are maxed out on threads, simply queue the object
         if (parent.getPoolSize() == parent.getMaximumPoolSize()) return super.offer(o);
         //we have idle threads, just add it to the queue
-        if (parent.getSubmittedCount()<=(parent.getPoolSize())) return super.offer(o);
+        if (parent.getSubmittedCount() <= (parent.getPoolSize())) return super.offer(o);
         //if we have less threads than maximum force creation of a new thread
-        if (parent.getPoolSize()<parent.getMaximumPoolSize()) return false;
+        if (parent.getPoolSize() < parent.getMaximumPoolSize()) return false;
         //if we reached here, we need to add it to the queue
         return super.offer(o);
     }
 
-
+    /**
+     * poll方法是从工作线程队列中弹出任务，如果发现没有任务，说明现在这会“Tomcat挺空闲”啊，就有机会“整肃”一下队伍了，
+     * 也就是Tomcat线程池中的线程，也就是执行前面说的这个renew操作
+     */
     @Override
     public Runnable poll(long timeout, TimeUnit unit)
             throws InterruptedException {
@@ -90,6 +104,7 @@ public class TaskQueue extends LinkedBlockingQueue<Runnable> {
         if (runnable == null && parent != null) {
             // the poll timed out, it gives an opportunity to stop the current
             // thread if needed to avoid memory leaks.
+            // 轮询超时，如果需要避免内存泄漏，它提供了一个停止当前线程的机会。
             parent.stopCurrentThreadIfNeeded();
         }
         return runnable;

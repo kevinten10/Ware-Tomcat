@@ -30,6 +30,12 @@ import org.apache.tomcat.util.threads.TaskQueue;
 import org.apache.tomcat.util.threads.TaskThreadFactory;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
 
+/**
+ * 线程池实现
+ *
+ * @author shihaowang
+ * @date 2019/4/1
+ */
 public class StandardThreadExecutor extends LifecycleMBeanBase
         implements Executor, ResizableExecutor {
 
@@ -93,9 +99,10 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
      * threads being renewed.
      */
     protected long threadRenewalDelay =
-        org.apache.tomcat.util.threads.Constants.DEFAULT_THREAD_RENEWAL_DELAY;
+            org.apache.tomcat.util.threads.Constants.DEFAULT_THREAD_RENEWAL_DELAY;
 
     private TaskQueue taskqueue = null;
+
     // ---------------------------------------------- Constructors
     public StandardThreadExecutor() {
         //empty constructor for the digester
@@ -114,15 +121,15 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
      * Start the component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected void startInternal() throws LifecycleException {
 
         taskqueue = new TaskQueue(maxQueueSize);
-        TaskThreadFactory tf = new TaskThreadFactory(namePrefix,daemon,getThreadPriority());
-        executor = new ThreadPoolExecutor(getMinSpareThreads(), getMaxThreads(), maxIdleTime, TimeUnit.MILLISECONDS,taskqueue, tf);
+        TaskThreadFactory tf = new TaskThreadFactory(namePrefix, daemon, getThreadPriority());
+        executor = new ThreadPoolExecutor(getMinSpareThreads(), getMaxThreads(), maxIdleTime, TimeUnit.MILLISECONDS, taskqueue, tf);
         executor.setThreadRenewalDelay(threadRenewalDelay);
         if (prestartminSpareThreads) {
             executor.prestartAllCoreThreads();
@@ -137,8 +144,8 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
      * Stop the component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#stopInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that needs to be reported
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that needs to be reported
      */
     @Override
     protected void stopInternal() throws LifecycleException {
@@ -161,7 +168,7 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
     @Override
     public void execute(Runnable command, long timeout, TimeUnit unit) {
         if (executor != null) {
-            executor.execute(command,timeout,unit);
+            executor.execute(command, timeout, unit);
         } else {
             throw new IllegalStateException(sm.getString("standardThreadExecutor.notStarted"));
         }
@@ -225,6 +232,7 @@ public class StandardThreadExecutor extends LifecycleMBeanBase
 
         return prestartminSpareThreads;
     }
+
     public void setThreadPriority(int threadPriority) {
         this.threadPriority = threadPriority;
     }

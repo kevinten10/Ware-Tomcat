@@ -21,7 +21,8 @@ import org.apache.juli.logging.LogFactory;
 
 /**
  * A Thread implementation that records the time at which it was created.
- *
+ * <p>
+ * 记录时间功能
  */
 public class TaskThread extends Thread {
 
@@ -34,7 +35,7 @@ public class TaskThread extends Thread {
     }
 
     public TaskThread(ThreadGroup group, Runnable target, String name,
-            long stackSize) {
+                      long stackSize) {
         super(group, new WrappingRunnable(target), name, stackSize);
         this.creationTime = System.currentTimeMillis();
     }
@@ -52,14 +53,16 @@ public class TaskThread extends Thread {
      */
     private static class WrappingRunnable implements Runnable {
         private Runnable wrappedRunnable;
+
         WrappingRunnable(Runnable wrappedRunnable) {
             this.wrappedRunnable = wrappedRunnable;
         }
+
         @Override
         public void run() {
             try {
                 wrappedRunnable.run();
-            } catch(StopPooledThreadException exc) {
+            } catch (StopPooledThreadException exc) {
                 //expected : we just swallow the exception to avoid disturbing
                 //debuggers like eclipse's
                 log.debug("Thread exiting on purpose", exc);
