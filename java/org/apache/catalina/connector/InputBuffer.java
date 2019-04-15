@@ -48,11 +48,15 @@ import org.apache.tomcat.util.res.StringManager;
  * OutputBuffer, adapted to handle input instead of output. This allows
  * complete recycling of the facade objects (the ServletInputStream and the
  * BufferedReader).
+ * <p>
+ * Tomcat请求使用的缓冲区。这是Tomcat 3.3 OutputBuffer的衍生产品，
+ * 适用于处理输入而不是输出。这允许完全回收Facade对象
+ * （ServletInputStream和BufferedReader）。
  *
  * @author Remy Maucherat
  */
 public class InputBuffer extends Reader
-    implements ByteChunk.ByteInputChannel, ApplicationBufferHandler {
+        implements ByteChunk.ByteInputChannel, ApplicationBufferHandler {
 
     /**
      * The string manager for this package.
@@ -376,7 +380,7 @@ public class InputBuffer extends Reader
      *
      * @param to the ByteBuffer into which bytes are to be written.
      * @return an integer specifying the actual number of bytes read, or -1 if
-     *         the end of the stream is reached
+     * the end of the stream is reached
      * @throws IOException if an input or output exception has occurred
      */
     public int read(ByteBuffer to) throws IOException {
@@ -653,17 +657,17 @@ public class InputBuffer extends Reader
 
     private void makeSpace(int count) {
         int desiredSize = cb.limit() + count;
-        if(desiredSize > readLimit) {
+        if (desiredSize > readLimit) {
             desiredSize = readLimit;
         }
 
-        if(desiredSize <= cb.capacity()) {
+        if (desiredSize <= cb.capacity()) {
             return;
         }
 
         int newSize = 2 * cb.capacity();
-        if(desiredSize >= newSize) {
-            newSize= 2 * cb.capacity() + count;
+        if (desiredSize >= newSize) {
+            newSize = 2 * cb.capacity() + count;
         }
 
         if (newSize > readLimit) {
