@@ -84,42 +84,42 @@ import org.apache.tomcat.util.threads.InlineExecutorService;
  * following <code>ContainerEvent</code> events to listeners who register
  * themselves with <code>addContainerListener()</code>:
  * <table border=1>
- *   <caption>ContainerEvents fired by this implementation</caption>
- *   <tr>
- *     <th>Type</th>
- *     <th>Data</th>
- *     <th>Description</th>
- *   </tr>
- *   <tr>
- *     <td align=center><code>addChild</code></td>
- *     <td align=center><code>Container</code></td>
- *     <td>Child container added to this Container.</td>
- *   </tr>
- *   <tr>
- *     <td align=center><code>{@link #getPipeline() pipeline}.addValve</code></td>
- *     <td align=center><code>Valve</code></td>
- *     <td>Valve added to this Container.</td>
- *   </tr>
- *   <tr>
- *     <td align=center><code>removeChild</code></td>
- *     <td align=center><code>Container</code></td>
- *     <td>Child container removed from this Container.</td>
- *   </tr>
- *   <tr>
- *     <td align=center><code>{@link #getPipeline() pipeline}.removeValve</code></td>
- *     <td align=center><code>Valve</code></td>
- *     <td>Valve removed from this Container.</td>
- *   </tr>
- *   <tr>
- *     <td align=center><code>start</code></td>
- *     <td align=center><code>null</code></td>
- *     <td>Container was started.</td>
- *   </tr>
- *   <tr>
- *     <td align=center><code>stop</code></td>
- *     <td align=center><code>null</code></td>
- *     <td>Container was stopped.</td>
- *   </tr>
+ * <caption>ContainerEvents fired by this implementation</caption>
+ * <tr>
+ * <th>Type</th>
+ * <th>Data</th>
+ * <th>Description</th>
+ * </tr>
+ * <tr>
+ * <td align=center><code>addChild</code></td>
+ * <td align=center><code>Container</code></td>
+ * <td>Child container added to this Container.</td>
+ * </tr>
+ * <tr>
+ * <td align=center><code>{@link #getPipeline() pipeline}.addValve</code></td>
+ * <td align=center><code>Valve</code></td>
+ * <td>Valve added to this Container.</td>
+ * </tr>
+ * <tr>
+ * <td align=center><code>removeChild</code></td>
+ * <td align=center><code>Container</code></td>
+ * <td>Child container removed from this Container.</td>
+ * </tr>
+ * <tr>
+ * <td align=center><code>{@link #getPipeline() pipeline}.removeValve</code></td>
+ * <td align=center><code>Valve</code></td>
+ * <td>Valve removed from this Container.</td>
+ * </tr>
+ * <tr>
+ * <td align=center><code>start</code></td>
+ * <td align=center><code>null</code></td>
+ * <td>Container was started.</td>
+ * </tr>
+ * <tr>
+ * <td align=center><code>stop</code></td>
+ * <td align=center><code>null</code></td>
+ * <td>Container was stopped.</td>
+ * </tr>
  * </table>
  * Subclasses that fire additional events should document them in the
  * class comments of the implementation class.
@@ -136,6 +136,9 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * addChild can be called with the XML parser on the stack,
      * this allows the XML parser to have fewer privileges than
      * Tomcat.
+     * <p>
+     * 使用该类的权限执行addChild。可以使用堆栈上的XML解析器调用addChild，
+     * 这允许XML解析器拥有比Tomcat更少的特权。
      */
     protected class PrivilegedAddChild implements PrivilegedAction<Void> {
 
@@ -242,7 +245,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * The string manager for this package.
      */
     protected static final StringManager sm =
-        StringManager.getManager(Constants.Package);
+            StringManager.getManager(Constants.Package);
 
 
     /**
@@ -260,6 +263,8 @@ public abstract class ContainerBase extends LifecycleMBeanBase
     /**
      * The access log to use for requests normally handled by this container
      * that have been handled earlier in the processing chain.
+     * <p>
+     * 用于此容器通常处理的请求的访问日志，该容器在处理链的早期处理过。
      */
     protected volatile AccessLog accessLog = null;
     private volatile boolean accessLogScanComplete = false;
@@ -300,6 +305,11 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * a thread to be spawn. After waiting the specified amount of time,
      * the thread will invoke the executePeriodic method on this container
      * and all its children.
+     * <p>
+     * 获取此容器及其子容器上的backgroundProcess方法调用之间的延迟。
+     * 如果子容器的延迟值不是负数(这意味着它们使用自己的线程)，则不会调用子容器。
+     * 将其设置为正值将导致生成一个线程。
+     * 在等待指定的时间之后，线程将调用这个容器及其所有子容器上的executeperiodicmethod。
      */
     @Override
     public int getBackgroundProcessorDelay() {
@@ -351,7 +361,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
                 name = "/" + name;
             }
             loggerName = "[" + name + "]"
-                + ((loggerName != null) ? ("." + loggerName) : "");
+                    + ((loggerName != null) ? ("." + loggerName) : "");
             current = current.getParent();
         }
         logName = ContainerBase.class.getName() + "." + loggerName;
@@ -417,7 +427,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
 
             // Stop the old component if necessary
             if (getState().isAvailable() && (oldCluster != null) &&
-                (oldCluster instanceof Lifecycle)) {
+                    (oldCluster instanceof Lifecycle)) {
                 try {
                     ((Lifecycle) oldCluster).stop();
                 } catch (LifecycleException e) {
@@ -430,7 +440,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
                 cluster.setContainer(this);
 
             if (getState().isAvailable() && (cluster != null) &&
-                (cluster instanceof Lifecycle)) {
+                    (cluster instanceof Lifecycle)) {
                 try {
                     ((Lifecycle) cluster).start();
                 } catch (LifecycleException e) {
@@ -463,10 +473,9 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * parent, Container names must be unique.
      *
      * @param name New name of this container
-     *
-     * @exception IllegalStateException if this Container has already been
-     *  added to the children of a parent Container (after which the name
-     *  may not be changed)
+     * @throws IllegalStateException if this Container has already been
+     *                               added to the children of a parent Container (after which the name
+     *                               may not be changed)
      */
     @Override
     public void setName(String name) {
@@ -520,10 +529,9 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * Container by throwing an exception.
      *
      * @param container Container to which this Container is being added
-     *  as a child
-     *
-     * @exception IllegalArgumentException if this Container refuses to become
-     *  attached to the specified Container
+     *                  as a child
+     * @throws IllegalArgumentException if this Container refuses to become
+     *                                  attached to the specified Container
      */
     @Override
     public void setParent(Container container) {
@@ -557,7 +565,6 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * been configured, and the specified value (if non-null) should be
      * passed as an argument to the class loader constructor.
      *
-     *
      * @param parent The new parent class loader
      */
     @Override
@@ -565,7 +572,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
         ClassLoader oldParentClassLoader = this.parentClassLoader;
         this.parentClassLoader = parent;
         support.firePropertyChange("parentClassLoader", oldParentClassLoader,
-                                   this.parentClassLoader);
+                this.parentClassLoader);
 
     }
 
@@ -631,7 +638,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
 
             // Stop the old component if necessary
             if (getState().isAvailable() && (oldRealm != null) &&
-                (oldRealm instanceof Lifecycle)) {
+                    (oldRealm instanceof Lifecycle)) {
                 try {
                     ((Lifecycle) oldRealm).stop();
                 } catch (LifecycleException e) {
@@ -643,7 +650,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
             if (realm != null)
                 realm.setContainer(this);
             if (getState().isAvailable() && (realm != null) &&
-                (realm instanceof Lifecycle)) {
+                    (realm instanceof Lifecycle)) {
                 try {
                     ((Lifecycle) realm).start();
                 } catch (LifecycleException e) {
@@ -670,21 +677,25 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * Container as an argument.  This method may thrown an
      * <code>IllegalArgumentException</code> if this Container chooses not
      * to be attached to the specified Container, in which case it is not added
+     * <p>
+     * 如果支持，将新的子容器添加到与此容器关联的子容器中。在将此容器添加到子集合之前，
+     * 必须调用子集合的setParent()方法，并将此容器作为参数。
+     * 如果此容器选择不附加到指定的容器，则此方法可能会引发IllegalArgumentException，
+     * 在这种情况下，它不会被添加
      *
      * @param child New child Container to be added
-     *
-     * @exception IllegalArgumentException if this exception is thrown by
-     *  the <code>setParent()</code> method of the child Container
-     * @exception IllegalArgumentException if the new child does not have
-     *  a name unique from that of existing children of this Container
-     * @exception IllegalStateException if this Container does not support
-     *  child Containers
+     * @throws IllegalArgumentException if this exception is thrown by
+     *                                  the <code>setParent()</code> method of the child Container
+     * @throws IllegalArgumentException if the new child does not have
+     *                                  a name unique from that of existing children of this Container
+     * @throws IllegalStateException    if this Container does not support
+     *                                  child Containers
      */
     @Override
     public void addChild(Container child) {
         if (Globals.IS_SECURITY_ENABLED) {
             PrivilegedAction<Void> dp =
-                new PrivilegedAddChild(child);
+                    new PrivilegedAddChild(child);
             AccessController.doPrivileged(dp);
         } else {
             addChildInternal(child);
@@ -693,9 +704,9 @@ public abstract class ContainerBase extends LifecycleMBeanBase
 
     private void addChildInternal(Container child) {
 
-        if( log.isDebugEnabled() )
+        if (log.isDebugEnabled())
             log.debug("Add child " + child + " " + this);
-        synchronized(children) {
+        synchronized (children) {
             if (children.get(child.getName()) != null)
                 throw new IllegalArgumentException(
                         sm.getString("containerBase.child.notUnique", child.getName()));
@@ -780,7 +791,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
     @Override
     public ContainerListener[] findContainerListeners() {
         ContainerListener[] results =
-            new ContainerListener[0];
+                new ContainerListener[0];
         return listeners.toArray(results);
     }
 
@@ -817,7 +828,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
             log.error(sm.getString("containerBase.child.destroy"), e);
         }
 
-        synchronized(children) {
+        synchronized (children) {
             if (children.get(child.getName()) == null)
                 return;
             children.remove(child.getName());
@@ -877,8 +888,8 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -928,6 +939,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
 
         setState(LifecycleState.STARTING);
 
+        // Engine容器的Delay不为-1(为10S)，所以Engine会定期执行此任务
         // Start our thread
         if (backgroundProcessorDelay > 0) {
             monitorFuture = Container.getService(ContainerBase.this).getServer()
@@ -941,8 +953,8 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * Stop this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#stopInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void stopInternal() throws LifecycleException {
@@ -1037,7 +1049,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      */
     @Override
     public void logAccess(Request request, Response response, long time,
-            boolean useDefault) {
+                          boolean useDefault) {
 
         boolean logged = false;
 
@@ -1090,13 +1102,12 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * use.
      *
      * @param valve Valve to be added
-     *
-     * @exception IllegalArgumentException if this Container refused to
-     *  accept the specified Valve
-     * @exception IllegalArgumentException if the specified Valve refuses to be
-     *  associated with this Container
-     * @exception IllegalStateException if the specified Valve is already
-     *  associated with a different Container
+     * @throws IllegalArgumentException if this Container refused to
+     *                                  accept the specified Valve
+     * @throws IllegalArgumentException if the specified Valve refuses to be
+     *                                  associated with this Container
+     * @throws IllegalStateException    if the specified Valve is already
+     *                                  associated with a different Container
      */
     public synchronized void addValve(Valve valve) {
 
@@ -1108,6 +1119,8 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * Execute a periodic task, such as reloading, etc. This method will be
      * invoked inside the classloading context of this container. Unexpected
      * throwables will be caught and logged.
+     * <p>
+     * 执行周期性任务，如重新加载等。此方法将在此容器的类加载上下文中调用。意外的投掷物将被捕获并记录下来。
      */
     @Override
     public void backgroundProcess() {
@@ -1220,7 +1233,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
             } else if (c instanceof Context) {
                 keyProperties.insert(0, ",context=");
                 ContextName cn = new ContextName(c.getName(), false);
-                keyProperties.insert(9,cn.getDisplayName());
+                keyProperties.insert(9, cn.getDisplayName());
             } else if (c instanceof Host) {
                 keyProperties.insert(0, ",host=");
                 keyProperties.insert(6, c.getName());
@@ -1257,7 +1270,9 @@ public abstract class ContainerBase extends LifecycleMBeanBase
 
     /**
      * Start the background thread that will periodically check for
-     * session timeouts.
+     * session timeouts.、
+     * <p>
+     * 启动后台线程，该线程将定期检查会话超时。
      */
     protected void threadStart() {
         if (backgroundProcessorDelay > 0
@@ -1271,6 +1286,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
                     log.error(sm.getString("containerBase.backgroundProcess.error"), e);
                 }
             }
+            // 在固定延迟之后调用此容器及其子容器的backgroundProcess方法
             backgroundProcessorFuture = Container.getService(this).getServer().getUtilityExecutor()
                     .scheduleWithFixedDelay(new ContainerBackgroundProcessor(),
                             backgroundProcessorDelay, backgroundProcessorDelay,
@@ -1320,6 +1336,8 @@ public abstract class ContainerBase extends LifecycleMBeanBase
     /**
      * Private runnable class to invoke the backgroundProcess method
      * of this container and its children after a fixed delay.
+     * <p>
+     * 私有runnable类，在固定延迟之后调用此容器及其子容器的backgroundProcess方法。
      */
     protected class ContainerBackgroundProcessor implements Runnable {
 
@@ -1343,6 +1361,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
                     // is performed under the web app's class loader
                     originalClassLoader = ((Context) container).bind(false, null);
                 }
+                // 具体执行
                 container.backgroundProcess();
                 Container[] children = container.findChildren();
                 for (int i = 0; i < children.length; i++) {

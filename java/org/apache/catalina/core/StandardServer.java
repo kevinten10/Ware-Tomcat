@@ -196,6 +196,8 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
 
     /**
      * Utility executor with scheduling capabilities.
+     * <p>
+     * 具有调度功能的实用程序执行器。
      */
     private ScheduledThreadPoolExecutor utilityExecutor = null;
 
@@ -506,15 +508,18 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
 
     /**
      * Add a new Service to the set of defined Services.
+     * <p>
+     * 添加新的service到server中，使用数组管理，并启动service
      *
      * @param service The Service to be added
      */
     @Override
     public void addService(Service service) {
-
+        // 双向关联，service保存server引用
         service.setServer(this);
 
         synchronized (servicesLock) {
+            // 数组管理
             Service results[] = new Service[services.length + 1];
             System.arraycopy(services, 0, results, 0, services.length);
             results[services.length] = service;
@@ -522,6 +527,7 @@ public final class StandardServer extends LifecycleMBeanBase implements Server {
 
             if (getState().isAvailable()) {
                 try {
+                    // 启动service
                     service.start();
                 } catch (LifecycleException e) {
                     // Ignore

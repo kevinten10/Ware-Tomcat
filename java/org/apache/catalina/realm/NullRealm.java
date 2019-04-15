@@ -22,6 +22,8 @@ import java.security.Principal;
  * Minimal Realm implementation that always returns null when an attempt is made
  * to validate a user name and password. It is intended to be used as a default
  * Realm implementation when no other Realm is specified.
+ * <p>
+ * 在尝试验证用户名和密码时始终返回null的最小域实现。当没有指定其他域时，它将用作缺省域实现。
  */
 public class NullRealm extends RealmBase {
 

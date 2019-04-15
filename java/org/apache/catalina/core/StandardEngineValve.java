@@ -31,6 +31,8 @@ import org.apache.catalina.valves.ValveBase;
  * <p>
  * <b>USAGE CONSTRAINT</b>:  This implementation is likely to be useful only
  * when processing HTTP requests.
+ * <p>
+ * 实现标准引擎容器实现的默认基本行为的阀门。使用限制:这个实现可能只有在处理HTTP请求时才有用。
  *
  * @author Craig R. McClanahan
  */
@@ -48,16 +50,17 @@ final class StandardEngineValve extends ValveBase {
      * Select the appropriate child Host to process this request,
      * based on the requested server name.  If no matching Host can
      * be found, return an appropriate HTTP error.
+     * <p>
+     * 根据请求的服务器名称，选择适当的子主机来处理此请求。如果找不到匹配的主机，则返回适当的HTTP错误。
      *
-     * @param request Request to be processed
+     * @param request  Request to be processed
      * @param response Response to be produced
-     *
-     * @exception IOException if an input/output error occurred
-     * @exception ServletException if a servlet error occurred
+     * @throws IOException      if an input/output error occurred
+     * @throws ServletException if a servlet error occurred
      */
     @Override
     public final void invoke(Request request, Response response)
-        throws IOException, ServletException {
+            throws IOException, ServletException {
 
         // Select the Host to be used for this Request
         Host host = request.getHost();

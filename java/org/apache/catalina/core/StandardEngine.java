@@ -48,6 +48,9 @@ import org.apache.juli.logging.LogFactory;
  * child container must be a Host implementation to process the specific
  * fully qualified host name of that virtual host. <br>
  * You can set the jvmRoute direct or with the System.property <b>jvmRoute</b>.
+ * <p>
+ * 引擎接口的标准实现。每个子容器必须是一个主机实现，以处理该虚拟主机的特定完全限定主机名。
+ * 您可以直接或用系统设置jvmRoute。
  *
  * @author Craig R. McClanahan
  */
@@ -68,7 +71,7 @@ public class StandardEngine extends ContainerBase implements Engine {
         /* Set the jmvRoute using the system property jvmRoute */
         try {
             setJvmRoute(System.getProperty("jvmRoute"));
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             log.warn(sm.getString("standardEngine.jvmRouteFail"));
         }
         // By default, the engine will hold the reloading thread
@@ -103,7 +106,7 @@ public class StandardEngine extends ContainerBase implements Engine {
      * the intended host and context.
      */
     private final AtomicReference<AccessLog> defaultAccessLog =
-        new AtomicReference<>();
+            new AtomicReference<>();
 
     // ------------------------------------------------------------- Properties
 
@@ -153,7 +156,7 @@ public class StandardEngine extends ContainerBase implements Engine {
             service.getMapper().setDefaultHostName(host);
         }
         support.firePropertyChange("defaultHost", oldDefaultHost,
-                                   this.defaultHost);
+                this.defaultHost);
 
     }
 
@@ -213,7 +216,7 @@ public class StandardEngine extends ContainerBase implements Engine {
 
         if (!(child instanceof Host))
             throw new IllegalArgumentException
-                (sm.getString("standardEngine.notHost"));
+                    (sm.getString("standardEngine.notHost"));
         super.addChild(child);
 
     }
@@ -229,7 +232,7 @@ public class StandardEngine extends ContainerBase implements Engine {
     public void setParent(Container container) {
 
         throw new IllegalArgumentException
-            (sm.getString("standardEngine.notParent"));
+                (sm.getString("standardEngine.notParent"));
 
     }
 
@@ -247,8 +250,8 @@ public class StandardEngine extends ContainerBase implements Engine {
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -271,7 +274,7 @@ public class StandardEngine extends ContainerBase implements Engine {
      */
     @Override
     public void logAccess(Request request, Response response, long time,
-            boolean useDefault) {
+                          boolean useDefault) {
 
         boolean logged = false;
 
@@ -423,7 +426,7 @@ public class StandardEngine extends ContainerBase implements Engine {
         private volatile boolean disabled = false;
 
         public AccessLogListener(StandardEngine engine, Host host,
-                Context context) {
+                                 Context context) {
             this.engine = engine;
             this.host = host;
             this.context = context;

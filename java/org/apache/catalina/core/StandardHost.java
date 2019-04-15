@@ -49,6 +49,8 @@ import org.apache.tomcat.util.ExceptionUtils;
  * Standard implementation of the <b>Host</b> interface.  Each
  * child container must be a Context implementation to process the
  * requests directed to a particular web application.
+ * <p>
+ * 主机接口的标准实现。每个子容器必须是一个上下文实现，以处理指向特定web应用程序的请求。
  *
  * @author Craig R. McClanahan
  * @author Remy Maucherat
@@ -109,7 +111,7 @@ public class StandardHost extends ContainerBase implements Host {
      * for deployed web applications.
      */
     private String configClass =
-        "org.apache.catalina.startup.ContextConfig";
+            "org.apache.catalina.startup.ContextConfig";
 
 
     /**
@@ -117,7 +119,7 @@ public class StandardHost extends ContainerBase implements Host {
      * deployed web applications.
      */
     private String contextClass =
-        "org.apache.catalina.core.StandardContext";
+            "org.apache.catalina.core.StandardContext";
 
 
     /**
@@ -145,7 +147,7 @@ public class StandardHost extends ContainerBase implements Host {
      * for deployed web applications.
      */
     private String errorReportValveClass =
-        "org.apache.catalina.valves.ErrorReportValve";
+            "org.apache.catalina.valves.ErrorReportValve";
 
 
     /**
@@ -294,7 +296,7 @@ public class StandardHost extends ContainerBase implements Host {
             return hostConfigBase;
         }
         String path = null;
-        if (getXmlBase()!=null) {
+        if (getXmlBase() != null) {
             path = getXmlBase();
         } else {
             StringBuilder xmlDir = new StringBuilder("conf");
@@ -330,6 +332,7 @@ public class StandardHost extends ContainerBase implements Host {
 
     /**
      * Set to <code>true</code> if the Host should attempt to create directories for xmlBase and appBase upon startup
+     *
      * @param createDirs the new flag value
      */
     @Override
@@ -358,7 +361,7 @@ public class StandardHost extends ContainerBase implements Host {
         boolean oldAutoDeploy = this.autoDeploy;
         this.autoDeploy = autoDeploy;
         support.firePropertyChange("autoDeploy", oldAutoDeploy,
-                                   this.autoDeploy);
+                this.autoDeploy);
 
     }
 
@@ -385,7 +388,7 @@ public class StandardHost extends ContainerBase implements Host {
         String oldConfigClass = this.configClass;
         this.configClass = configClass;
         support.firePropertyChange("configClass",
-                                   oldConfigClass, this.configClass);
+                oldConfigClass, this.configClass);
 
     }
 
@@ -410,7 +413,7 @@ public class StandardHost extends ContainerBase implements Host {
         String oldContextClass = this.contextClass;
         this.contextClass = contextClass;
         support.firePropertyChange("contextClass",
-                                   oldContextClass, this.contextClass);
+                oldContextClass, this.contextClass);
 
     }
 
@@ -437,7 +440,7 @@ public class StandardHost extends ContainerBase implements Host {
         boolean oldDeployOnStartup = this.deployOnStartup;
         this.deployOnStartup = deployOnStartup;
         support.firePropertyChange("deployOnStartup", oldDeployOnStartup,
-                                   this.deployOnStartup);
+                this.deployOnStartup);
 
     }
 
@@ -498,8 +501,8 @@ public class StandardHost extends ContainerBase implements Host {
         String oldErrorReportValveClassClass = this.errorReportValveClass;
         this.errorReportValveClass = errorReportValveClass;
         support.firePropertyChange("errorReportValveClass",
-                                   oldErrorReportValveClassClass,
-                                   this.errorReportValveClass);
+                oldErrorReportValveClassClass,
+                this.errorReportValveClass);
 
     }
 
@@ -519,15 +522,14 @@ public class StandardHost extends ContainerBase implements Host {
      * this Container represents.
      *
      * @param name Virtual host name
-     *
-     * @exception IllegalArgumentException if name is null
+     * @throws IllegalArgumentException if name is null
      */
     @Override
     public void setName(String name) {
 
         if (name == null)
             throw new IllegalArgumentException
-                (sm.getString("standardHost.nullName"));
+                    (sm.getString("standardHost.nullName"));
 
         name = name.toLowerCase(Locale.ENGLISH);      // Internally all names are lower case
 
@@ -620,8 +622,8 @@ public class StandardHost extends ContainerBase implements Host {
             this.deployIgnore = Pattern.compile(deployIgnore);
         }
         support.firePropertyChange("deployIgnore",
-                                   oldDeployIgnore,
-                                   deployIgnore);
+                oldDeployIgnore,
+                deployIgnore);
     }
 
 
@@ -635,8 +637,9 @@ public class StandardHost extends ContainerBase implements Host {
 
     /**
      * Change the behavior of Servlet startup errors on web application starts.
+     *
      * @param failCtxIfServletStartFails <code>false</code> to ignore errors on Servlets which
-     *    are stated when the web application starts
+     *                                   are stated when the web application starts
      */
     public void setFailCtxIfServletStartFails(
             boolean failCtxIfServletStartFails) {
@@ -691,7 +694,7 @@ public class StandardHost extends ContainerBase implements Host {
 
         if (!(child instanceof Context))
             throw new IllegalArgumentException
-                (sm.getString("standardHost.notContext"));
+                    (sm.getString("standardHost.notContext"));
         super.addChild(child);
 
     }
@@ -798,8 +801,8 @@ public class StandardHost extends ContainerBase implements Host {
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -816,9 +819,9 @@ public class StandardHost extends ContainerBase implements Host {
                         break;
                     }
                 }
-                if(!found) {
+                if (!found) {
                     Valve valve =
-                        (Valve) Class.forName(errorValve).getConstructor().newInstance();
+                            (Valve) Class.forName(errorValve).getConstructor().newInstance();
                     getPipeline().addValve(valve);
                 }
             } catch (Throwable t) {
@@ -833,26 +836,26 @@ public class StandardHost extends ContainerBase implements Host {
 
 
     // -------------------- JMX  --------------------
+
     /**
-      * @return the MBean Names of the Valves associated with this Host
-      *
-      * @exception Exception if an MBean cannot be created or registered
-      */
-     public String[] getValveNames() throws Exception {
-         Valve [] valves = this.getPipeline().getValves();
-         String [] mbeanNames = new String[valves.length];
-         for (int i = 0; i < valves.length; i++) {
-             if (valves[i] instanceof JmxEnabled) {
-                 ObjectName oname = ((JmxEnabled) valves[i]).getObjectName();
-                 if (oname != null) {
-                     mbeanNames[i] = oname.toString();
-                 }
-             }
-         }
+     * @return the MBean Names of the Valves associated with this Host
+     * @throws Exception if an MBean cannot be created or registered
+     */
+    public String[] getValveNames() throws Exception {
+        Valve[] valves = this.getPipeline().getValves();
+        String[] mbeanNames = new String[valves.length];
+        for (int i = 0; i < valves.length; i++) {
+            if (valves[i] instanceof JmxEnabled) {
+                ObjectName oname = ((JmxEnabled) valves[i]).getObjectName();
+                if (oname != null) {
+                    mbeanNames[i] = oname.toString();
+                }
+            }
+        }
 
-         return mbeanNames;
+        return mbeanNames;
 
-     }
+    }
 
     public String[] getAliases() {
         synchronized (aliasesLock) {

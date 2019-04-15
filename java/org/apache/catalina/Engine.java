@@ -21,9 +21,9 @@ package org.apache.catalina;
  * engine.  It is useful in the following types of scenarios:
  * <ul>
  * <li>You wish to use Interceptors that see every single request processed
- *     by the entire engine.
+ * by the entire engine.
  * <li>You wish to run Catalina in with a standalone HTTP connector, but still
- *     want support for multiple virtual hosts.
+ * want support for multiple virtual hosts.
  * </ul>
  * In general, you would not use an Engine when deploying Catalina connected
  * to a web server (such as Apache), because the Connector will have
@@ -37,6 +37,18 @@ package org.apache.catalina;
  * If used, an Engine is always the top level Container in a Catalina
  * hierarchy. Therefore, the implementation's <code>setParent()</code> method
  * should throw <code>IllegalArgumentException</code>.
+ * <p>
+ * 引擎是表示整个Catalina servlet引擎的容器。
+ * 它在以下类型的场景中非常有用:您希望使用拦截器来查看整个引擎处理的每个请求。
+ * 您希望使用独立的HTTP连接器运行Catalina，但仍然希望支持多个虚拟主机。
+ * 通常，在部署连接到web服务器(如Apache)的Catalina时，您不会使用引擎，
+ * 因为连接器将使用web服务器的工具来确定应该使用哪个上下文(甚至可能是哪个包装器)来处理这个请求。
+ * 附加到引擎的子容器通常是主机(表示虚拟主机)或上下文(表示单个servlet上下文)的实现，
+ * 具体取决于引擎实现。如果使用，引擎始终是Catalina层次结构中的顶层容器。
+ * 因此，实现的setParent()方法应该抛出IllegalArgumentException。
+ * <p>
+ * 而通常我们自己建站就会发现虚拟主机的概念，虚拟主机是解决一台实际的物理机的资源浪费，
+ * 将不同的站点服务器共享在一台物理机中进行使用，这样节省资源，又发挥共享经济；
  *
  * @author Craig R. McClanahan
  */
@@ -66,7 +78,7 @@ public interface Engine extends Container {
      * Set the JvmRouteId for this engine.
      *
      * @param jvmRouteId the (new) JVM Route ID. Each Engine within a cluster
-     *        must have a unique JVM Route ID.
+     *                   must have a unique JVM Route ID.
      */
     public void setJvmRoute(String jvmRouteId);
 

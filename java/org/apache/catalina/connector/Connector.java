@@ -47,6 +47,8 @@ import org.apache.tomcat.util.res.StringManager;
 
 /**
  * Implementation of a Coyote connector.
+ * <p>
+ * 接收TCP连接请求，创建request和response，并将产生的对象传给处理请求的线程(Container)
  *
  * @author Craig R. McClanahan
  * @author Remy Maucherat
@@ -75,7 +77,9 @@ public class Connector extends LifecycleMBeanBase {
         this("org.apache.coyote.http11.Http11NioProtocol");
     }
 
-
+    /**
+     * 根据protocol协议创建对应的connector处理器
+     */
     public Connector(String protocol) {
         boolean aprConnector = AprLifecycleListener.isAprAvailable() &&
                 AprLifecycleListener.getUseAprConnector();

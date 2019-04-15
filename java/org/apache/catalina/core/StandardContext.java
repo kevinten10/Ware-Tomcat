@@ -5499,7 +5499,9 @@ public class StandardContext extends ContainerBase
         super.destroyInternal();
     }
 
-
+    /**
+     * 周期性检查
+     */
     @Override
     public void backgroundProcess() {
 

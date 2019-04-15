@@ -153,6 +153,8 @@ public abstract class LifecycleBase implements Lifecycle {
 
 
     /**
+     * 启动新的生命周期
+     * <p>
      * {@inheritDoc}
      */
     @Override

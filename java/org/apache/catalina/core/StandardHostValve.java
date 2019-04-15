@@ -45,6 +45,8 @@ import org.apache.tomcat.util.res.StringManager;
  * <p>
  * <b>USAGE CONSTRAINT</b>:  This implementation is likely to be useful only
  * when processing HTTP requests.
+ * <p>
+ * 为标准主机容器实现实现默认基本行为的阀门。使用限制:这个实现可能只有在处理HTTP请求时才有用。
  *
  * @author Craig R. McClanahan
  * @author Remy Maucherat
@@ -87,7 +89,7 @@ final class StandardHostValve extends ValveBase {
      * The string manager for this package.
      */
     private static final StringManager sm =
-        StringManager.getManager(Constants.Package);
+            StringManager.getManager(Constants.Package);
 
 
     // --------------------------------------------------------- Public Methods
@@ -96,16 +98,17 @@ final class StandardHostValve extends ValveBase {
      * Select the appropriate child Context to process this request,
      * based on the specified request URI.  If no matching Context can
      * be found, return an appropriate HTTP error.
+     * <p>
+     * 根据指定的请求URI选择适当的子上下文来处理此请求。如果找不到匹配的上下文，则返回适当的HTTP错误。
      *
-     * @param request Request to be processed
+     * @param request  Request to be processed
      * @param response Response to be produced
-     *
-     * @exception IOException if an input/output error occurred
-     * @exception ServletException if a servlet error occurred
+     * @throws IOException      if an input/output error occurred
+     * @throws ServletException if a servlet error occurred
      */
     @Override
     public final void invoke(Request request, Response response)
-        throws IOException, ServletException {
+            throws IOException, ServletException {
 
         // Select the Context to be used for this Request
         Context context = request.getContext();
@@ -199,8 +202,10 @@ final class StandardHostValve extends ValveBase {
      * while processing the specified Request to produce the specified
      * Response.  Any exceptions that occur during generation of the error
      * report are logged and swallowed.
+     * <p>
+     * 处理处理指定请求时生成的HTTP状态代码(和相应的消息)，以生成指定的响应。在生成错误报告期间发生的任何异常都将被记录并删除。
      *
-     * @param request The request being processed
+     * @param request  The request being processed
      * @param response The response being generated
      */
     private void status(Request request, Response response) {
@@ -230,7 +235,7 @@ final class StandardHostValve extends ValveBase {
         if (errorPage != null && response.isErrorReportRequired()) {
             response.setAppCommitted(false);
             request.setAttribute(RequestDispatcher.ERROR_STATUS_CODE,
-                              Integer.valueOf(statusCode));
+                    Integer.valueOf(statusCode));
 
             String message = response.getMessage();
             if (message == null) {
@@ -246,10 +251,10 @@ final class StandardHostValve extends ValveBase {
             Wrapper wrapper = request.getWrapper();
             if (wrapper != null) {
                 request.setAttribute(RequestDispatcher.ERROR_SERVLET_NAME,
-                                  wrapper.getName());
+                        wrapper.getName());
             }
             request.setAttribute(RequestDispatcher.ERROR_REQUEST_URI,
-                                 request.getRequestURI());
+                    request.getRequestURI());
             if (custom(request, response, errorPage)) {
                 response.setErrorReported();
                 try {
@@ -269,11 +274,13 @@ final class StandardHostValve extends ValveBase {
      * the specified Request to produce the specified Response.  Any
      * exceptions that occur during generation of the exception report are
      * logged and swallowed.
+     * <p>
+     * 处理在处理指定请求时遇到的指定可掷性，以生成指定的响应。在生成异常报告期间发生的任何异常都将被记录并吞噬。
      *
-     * @param request The request being processed
-     * @param response The response being generated
+     * @param request   The request being processed
+     * @param response  The response being generated
      * @param throwable The exception that occurred (which possibly wraps
-     *  a root cause exception
+     *                  a root cause exception
      */
     protected void throwable(Request request, Response response,
                              Throwable throwable) {
@@ -292,11 +299,11 @@ final class StandardHostValve extends ValveBase {
         }
 
         // If this is an aborted request from a client just log it and return
-        if (realError instanceof ClientAbortException ) {
+        if (realError instanceof ClientAbortException) {
             if (log.isDebugEnabled()) {
                 log.debug
-                    (sm.getString("standardHost.clientAbort",
-                        realError.getCause().getMessage()));
+                        (sm.getString("standardHost.clientAbort",
+                                realError.getCause().getMessage()));
             }
             return;
         }
@@ -316,18 +323,18 @@ final class StandardHostValve extends ValveBase {
                 request.setAttribute(RequestDispatcher.ERROR_STATUS_CODE,
                         Integer.valueOf(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
                 request.setAttribute(RequestDispatcher.ERROR_MESSAGE,
-                                  throwable.getMessage());
+                        throwable.getMessage());
                 request.setAttribute(RequestDispatcher.ERROR_EXCEPTION,
-                                  realError);
+                        realError);
                 Wrapper wrapper = request.getWrapper();
                 if (wrapper != null) {
                     request.setAttribute(RequestDispatcher.ERROR_SERVLET_NAME,
-                                      wrapper.getName());
+                            wrapper.getName());
                 }
                 request.setAttribute(RequestDispatcher.ERROR_REQUEST_URI,
-                                     request.getRequestURI());
+                        request.getRequestURI());
                 request.setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE,
-                                  realError.getClass());
+                        realError.getClass());
                 if (custom(request, response, errorPage)) {
                     try {
                         response.finishResponse();
@@ -357,13 +364,17 @@ final class StandardHostValve extends ValveBase {
      * that are to be forwarded to this page.  Return <code>true</code> if
      * we successfully utilized the specified error page location, or
      * <code>false</code> if the default error report should be rendered.
+     * <p>
+     * 通过将控件转发到指定的errorPage对象中包含的位置来处理HTTP状态代码或Java异常。
+     * 假定调用者已经记录了要转发到此页面的任何请求属性。
+     * 如果我们成功地使用了指定的错误页面位置，则返回true;如果应该呈现缺省错误报告，则返回false。
      *
-     * @param request The request being processed
-     * @param response The response being generated
+     * @param request   The request being processed
+     * @param response  The response being generated
      * @param errorPage The errorPage directive we are obeying
      */
     private boolean custom(Request request, Response response,
-                             ErrorPage errorPage) {
+                           ErrorPage errorPage) {
 
         if (container.getLogger().isDebugEnabled()) {
             container.getLogger().debug("Processing " + errorPage);
@@ -372,13 +383,13 @@ final class StandardHostValve extends ValveBase {
         try {
             // Forward control to the specified location
             ServletContext servletContext =
-                request.getContext().getServletContext();
+                    request.getContext().getServletContext();
             RequestDispatcher rd =
-                servletContext.getRequestDispatcher(errorPage.getLocation());
+                    servletContext.getRequestDispatcher(errorPage.getLocation());
 
             if (rd == null) {
                 container.getLogger().error(
-                    sm.getString("standardHostValue.customStatusFailed", errorPage.getLocation()));
+                        sm.getString("standardHostValue.customStatusFailed", errorPage.getLocation()));
                 return false;
             }
 

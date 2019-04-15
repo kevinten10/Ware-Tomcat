@@ -92,6 +92,12 @@ package org.apache.catalina;
  * The {@link LifecycleEvent}s fired during state changes are defined in the
  * methods that trigger the changed. No {@link LifecycleEvent}s are fired if the
  * attempted transition is not valid.
+ * <p>
+ * 最高层组件为server，控制server的是startup，也就是启动和关闭tomcat
+ * <p>
+ * 除了控制生命周期，还提供了监听机制，可以在生命周期过程中做一些额外操作
+ * <p>
+ * 生命周期由父组件控制，所以start和stop等方法，是父组件调用子组件的方式，即server的start会调用service的start
  *
  * @author Craig R. McClanahan
  */

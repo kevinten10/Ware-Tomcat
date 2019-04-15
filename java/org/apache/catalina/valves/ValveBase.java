@@ -33,6 +33,8 @@ import org.apache.tomcat.util.res.StringManager;
  * method to provide the required functionality, and <strong>MAY</strong>
  * implement the <code>Lifecycle</code> interface to provide configuration
  * management and lifecycle support.
+ * <p>
+ * 方便实现阀门接口的基类。子类必须实现invoke()方法来提供所需的功能，并且可以实现Lifecycle接口来提供配置管理和生命周期支持。
  *
  * @author Craig R. McClanahan
  */
@@ -157,8 +159,8 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void startInternal() throws LifecycleException {
@@ -170,8 +172,8 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
      * Stop this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#stopInternal()}.
      *
-     * @exception LifecycleException if this component detects a fatal error
-     *  that prevents this component from being used
+     * @throws LifecycleException if this component detects a fatal error
+     *                            that prevents this component from being used
      */
     @Override
     protected synchronized void stopInternal() throws LifecycleException {
@@ -215,7 +217,7 @@ public abstract class ValveBase extends LifecycleMBeanBase implements Contained,
                 if (valve.getClass() == this.getClass()) {
                     // Duplicate valve earlier in pipeline
                     // increment sequence number
-                    seq ++;
+                    seq++;
                 }
             }
         }

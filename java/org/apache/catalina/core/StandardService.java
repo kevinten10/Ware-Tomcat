@@ -120,20 +120,26 @@ public class StandardService extends LifecycleMBeanBase implements Service {
         return engine;
     }
 
-
+    /**
+     * 关联新的container并启动
+     */
     @Override
     public void setContainer(Engine engine) {
         Engine oldEngine = this.engine;
         if (oldEngine != null) {
+            // old设置为空
             oldEngine.setService(null);
         }
         this.engine = engine;
         if (this.engine != null) {
+            // 设置new
             this.engine.setService(this);
         }
+        // 获取当前生命周期的状态（判断是否已被启动）
         if (getState().isAvailable()) {
             if (this.engine != null) {
                 try {
+                    // 启动当前容器
                     this.engine.start();
                 } catch (LifecycleException e) {
                     log.error(sm.getString("standardService.engine.startFailed"), e);
@@ -141,17 +147,20 @@ public class StandardService extends LifecycleMBeanBase implements Service {
             }
             // Restart MapperListener to pick up new engine.
             try {
+                // 关闭原监听
                 mapperListener.stop();
             } catch (LifecycleException e) {
                 log.error(sm.getString("standardService.mapperListener.stopFailed"), e);
             }
             try {
+                // 启动新的监听机制
                 mapperListener.start();
             } catch (LifecycleException e) {
                 log.error(sm.getString("standardService.mapperListener.startFailed"), e);
             }
             if (oldEngine != null) {
                 try {
+                    // 关闭原容器
                     oldEngine.stop();
                 } catch (LifecycleException e) {
                     log.error(sm.getString("standardService.engine.stopFailed"), e);
@@ -219,12 +228,14 @@ public class StandardService extends LifecycleMBeanBase implements Service {
     public void addConnector(Connector connector) {
 
         synchronized (connectorsLock) {
+            // 设置关联关系
             connector.setService(this);
+            // 重新复制一个数组
             Connector results[] = new Connector[connectors.length + 1];
             System.arraycopy(connectors, 0, results, 0, connectors.length);
             results[connectors.length] = connector;
             connectors = results;
-
+            // 启动新的生命周期
             if (getState().isAvailable()) {
                 try {
                     connector.start();
