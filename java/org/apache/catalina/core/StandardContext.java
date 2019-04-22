@@ -165,6 +165,7 @@ public class StandardContext extends ContainerBase
         if (!Globals.STRICT_SERVLET_COMPLIANCE) {
             // Strict servlet compliance requires all extension mapped servlets
             // to be checked against welcome files
+            // 严格的servlet遵从性要求根据欢迎文件检查所有映射的扩展名servlet
             resourceOnlyServlets.add("jsp");
         }
     }
@@ -277,6 +278,8 @@ public class StandardContext extends ContainerBase
 
     /**
      * The "correctly configured" flag for this Context.
+     * <p>
+     * 此上下文的“正确配置”标志。
      */
     private boolean configured = false;
 
@@ -3714,6 +3717,13 @@ public class StandardContext extends ContainerBase
      * instead. Note that there is additional code in
      * <code>CoyoteAdapter#postParseRequest()</code> to handle mapping requests
      * to paused Contexts.
+     * <p>
+     * 如果支持重新加载，则重新加载此web应用程序。
+     * 实现注意:
+     * 此方法用于处理类加载器底层存储库中的类更改和web.xml文件更改所需的重新加载。
+     * 它不处理任何context.xml文件的更改。
+     * 如果Context .xml发生了变化，那么应该停止这个上下文并创建(并启动)一个新的上下文实例。
+     * 注意，CoyoteAdapter#postParseRequest()中有额外的代码来处理到暂停上下文的映射请求。
      *
      * @throws IllegalStateException if the <code>reloadable</code>
      *                               property is set to <code>false</code>.
@@ -4878,6 +4888,8 @@ public class StandardContext extends ContainerBase
     /**
      * Start this component and implement the requirements
      * of {@link org.apache.catalina.util.LifecycleBase#startInternal()}.
+     * <p>
+     * 启动此组件并实现org.apache.catalina.util.LifecycleBase.startInternal()的需求。
      *
      * @throws LifecycleException if this component detects a fatal error
      *                            that prevents this component from being used
@@ -5500,7 +5512,7 @@ public class StandardContext extends ContainerBase
     }
 
     /**
-     * 周期性检查
+     * Context的所有组件使用同一个后台线程
      */
     @Override
     public void backgroundProcess() {
@@ -5508,6 +5520,7 @@ public class StandardContext extends ContainerBase
         if (!getState().isAvailable())
             return;
 
+        // 加载器后台线程
         Loader loader = getLoader();
         if (loader != null) {
             try {
@@ -5517,6 +5530,8 @@ public class StandardContext extends ContainerBase
                         "standardContext.backgroundProcess.loader", loader), e);
             }
         }
+
+        // 管理器后台线程
         Manager manager = getManager();
         if (manager != null) {
             try {
@@ -5527,6 +5542,8 @@ public class StandardContext extends ContainerBase
                         e);
             }
         }
+
+        // 资源后台线程
         WebResourceRoot resources = getResources();
         if (resources != null) {
             try {
@@ -5537,6 +5554,8 @@ public class StandardContext extends ContainerBase
                         resources), e);
             }
         }
+
+        // 实例管理器后台线程
         InstanceManager instanceManager = getInstanceManager();
         if (instanceManager != null) {
             try {
@@ -5702,6 +5721,8 @@ public class StandardContext extends ContainerBase
     /**
      * Bind current thread, both for CL purposes and for JNDI ENC support
      * during : startup, shutdown and reloading of the context.
+     * <p>
+     * TODO 在启动、关闭和重新加载上下文期间，绑定当前线程(用于CL目的)和JNDI ENC支持。
      *
      * @return the previous context class loader
      */

@@ -28,6 +28,10 @@ import org.apache.tomcat.util.res.StringManager;
 /**
  * Representation of a filter definition for a web application, as represented
  * in a <code>&lt;filter&gt;</code> element in the deployment descriptor.
+ * <p>
+ * web应用程序筛选器定义的表示，如部署描述符中的<filter>元素所示。
+ * <p>
+ * 保存了定义filter元素时的声明的子元素
  *
  * @author Craig R. McClanahan
  */
@@ -36,7 +40,7 @@ public class FilterDef implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final StringManager sm =
-        StringManager.getManager(Constants.PACKAGE_NAME);
+            StringManager.getManager(Constants.PACKAGE_NAME);
 
     // ------------------------------------------------------------- Properties
 
@@ -133,6 +137,8 @@ public class FilterDef implements Serializable {
     /**
      * The set of initialization parameters for this filter, keyed by
      * parameter name.
+     * <p>
+     * 此筛选器的初始化参数集，按参数名称键控。
      */
     private final Map<String, String> parameters = new HashMap<>();
 
@@ -171,8 +177,10 @@ public class FilterDef implements Serializable {
     /**
      * Add an initialization parameter to the set of parameters associated
      * with this filter.
+     * <p>
+     * 将初始化参数添加到与此筛选器关联的参数集中。
      *
-     * @param name The initialization parameter name
+     * @param name  The initialization parameter name
      * @param value The initialization parameter value
      */
     public void addInitParameter(String name, String value) {

@@ -34,6 +34,14 @@ package javax.servlet;
  * such as avoiding the usage of an instance variable or synchronizing the block
  * of the code accessing those resources. This interface is deprecated in
  * Servlet API version 2.4.
+ * <p>
+ * 确保servlet一次只处理一个请求。这个接口没有方法。
+ * 如果servlet实现了这个接口，就可以保证servlet的服务方法中不会同时执行两个线程。
+ * servlet容器可以通过同步对servlet单个实例的访问，
+ * 或者通过维护servlet实例池并将每个新请求分派给一个空闲的servlet来实现这一保证。
+ * 注意，单线程模型并不能解决所有线程安全问题。例如，即使使用单线程模型servlet，会话属性和静态变量仍然可以由多个线程上的多个请求同时访问。
+ * 建议开发人员采用其他方法来解决这些问题，而不是实现这个接口，比如避免使用实例变量或同步访问这些资源的代码块。
+ * 这个接口在Servlet API 2.4版本中是不推荐的。
  *
  * @deprecated As of Java Servlet API 2.4, with no direct replacement.
  */

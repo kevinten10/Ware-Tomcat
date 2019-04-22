@@ -1272,7 +1272,7 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * Start the background thread that will periodically check for
      * session timeouts.、
      * <p>
-     * 启动后台线程，该线程将定期检查会话超时。
+     * 启动后台线程，所有组件使用同一个后台线程，如有需要的组件，把方法写在这个后台线程里
      */
     protected void threadStart() {
         if (backgroundProcessorDelay > 0
@@ -1338,6 +1338,8 @@ public abstract class ContainerBase extends LifecycleMBeanBase
      * of this container and its children after a fixed delay.
      * <p>
      * 私有runnable类，在固定延迟之后调用此容器及其子容器的backgroundProcess方法。
+     * <p>
+     * 统一调度各个组件的后台线程，如有需要，写在backgroundProcess方法中即可
      */
     protected class ContainerBackgroundProcessor implements Runnable {
 

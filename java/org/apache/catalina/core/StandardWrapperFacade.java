@@ -27,11 +27,13 @@ import javax.servlet.ServletContext;
 
 /**
  * Facade for the <b>StandardWrapper</b> object.
+ * <p>
+ * 将大部分方法对servlet程序员隐藏起来
  *
  * @author Remy Maucherat
  */
 public final class StandardWrapperFacade
-    implements ServletConfig {
+        implements ServletConfig {
 
 
     // ----------------------------------------------------------- Constructors
@@ -39,6 +41,9 @@ public final class StandardWrapperFacade
 
     /**
      * Create a new facade around a StandardWrapper.
+     * <p>
+     * 对wrapper进行包装
+     *
      * @param config the associated wrapper
      */
     public StandardWrapperFacade(StandardWrapper config) {
