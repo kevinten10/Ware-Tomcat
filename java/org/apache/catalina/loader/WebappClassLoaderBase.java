@@ -215,6 +215,8 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     /**
      * Construct a new ClassLoader with no defined repositories and no
      * parent ClassLoader.
+     * <p>
+     * 构造一个没有定义存储库和*父类加载器的新类加载器。
      */
     protected WebappClassLoaderBase() {
 
@@ -872,6 +874,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                 log.trace("      findClassInternal(" + name + ")");
             try {
                 if (securityManager != null) {
+                    // TODO 跳过安全验证
                     PrivilegedAction<Class<?>> dp =
                             new PrivilegedFindClassByName(name);
                     clazz = AccessController.doPrivileged(dp);
@@ -918,6 +921,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
         if (log.isTraceEnabled()) {
             ClassLoader cl;
             if (Globals.IS_SECURITY_ENABLED) {
+                // TODO 跳过安全验证
                 cl = AccessController.doPrivileged(
                         new PrivilegedGetClassLoader(clazz));
             } else {
