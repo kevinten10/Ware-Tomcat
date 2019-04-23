@@ -18,6 +18,12 @@ package org.apache.catalina.loader;
 
 import org.apache.catalina.LifecycleException;
 
+/**
+ * 负责载入类，使用了缓存机制
+ *
+ * @author shihaowang
+ * @date 2019/4/23
+ */
 public class WebappClassLoader extends WebappClassLoaderBase {
 
     public WebappClassLoader() {

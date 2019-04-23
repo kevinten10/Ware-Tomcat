@@ -117,6 +117,20 @@ import org.apache.tomcat.util.security.PermissionCheck;
  * application classes to instrument other classes in the same web
  * application. It does not permit instrumentation of system or container
  * classes or classes in other web apps.
+ * <p>
+ * 专门的web应用程序类装入器。这个类加载器是JDK中URLClassLoader的完整重新实现。
+ * 它被设计为与普通的URLClassLoader完全兼容，尽管它的内部行为可能完全不同。
+ * 实现注意:默认情况下，这个类加载器遵循规范要求的委托模型。
+ * 首先查询系统类加载器，然后查询本地存储库，然后才会将任务委托给父类加载器。
+ * 这允许web应用程序覆盖除J2SE类之外的任何共享类。
+ * JAXP XML解析器接口、JNDI接口和servlet API中的类提供了特殊的处理，这些类从不从web应用程序存储库加载。
+ * 委托属性允许应用程序修改此行为，以便将父类加载器移动到本地存储库之前。
+ * 实现注意:由于Jasper编译技术的限制，任何包含servlet API类的存储库都会被类加载器忽略。
+ * 实现注意:类加载器生成源URL，其中包括从JAR文件加载类时的完整JAR URL，这允许在类级别设置安全权限，即使类包含在JAR中也是如此。
+ * 实现注意:搜索本地存储库的顺序是通过初始构造函数添加的。
+ * 实施说明——除非有安全经理在场，否则不检查密封违规或安全性。
+ * 实现注意:从8.0开始，这个类加载器实现了仪表ableclassloader，允许web应用程序类检测同一web应用程序中的其他类。
+ * 它不允许检测系统或容器类或其他web应用程序中的类。
  *
  * @author Remy Maucherat
  * @author Craig R. McClanahan
@@ -161,7 +175,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
         private final Class<?> clazz;
 
-        public PrivilegedGetClassLoader(Class<?> clazz){
+        public PrivilegedGetClassLoader(Class<?> clazz) {
             this.clazz = clazz;
         }
 
@@ -193,7 +207,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * The string manager for this package.
      */
     protected static final StringManager sm =
-        StringManager.getManager(Constants.Package);
+            StringManager.getManager(Constants.Package);
 
 
     // ----------------------------------------------------------- Constructors
@@ -294,7 +308,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     protected boolean delegate = false;
 
 
-    private final Map<String,Long> jarModificationTimes = new HashMap<>();
+    private final Map<String, Long> jarModificationTimes = new HashMap<>();
 
 
     /**
@@ -433,8 +447,9 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
     /**
      * Set associated resources.
+     *
      * @param resources the resources from which the classloader will
-     *     load the classes
+     *                  load the classes
      */
     public void setResources(WebResourceRoot resources) {
         this.resources = resources;
@@ -455,8 +470,9 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
     /**
      * Return the "delegate first" flag for this class loader.
+     *
      * @return <code>true</code> if the class lookup will delegate to
-     *   the parent first. The default in Tomcat is <code>false</code>.
+     * the parent first. The default in Tomcat is <code>false</code>.
      */
     public boolean getDelegate() {
         return this.delegate;
@@ -603,7 +619,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     public void setClearReferencesLogFactoryRelease(
             boolean clearReferencesLogFactoryRelease) {
         this.clearReferencesLogFactoryRelease =
-            clearReferencesLogFactoryRelease;
+                clearReferencesLogFactoryRelease;
     }
 
 
@@ -625,7 +641,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     public void setClearReferencesHttpClientKeepAliveThread(
             boolean clearReferencesHttpClientKeepAliveThread) {
         this.clearReferencesHttpClientKeepAliveThread =
-            clearReferencesHttpClientKeepAliveThread;
+                clearReferencesHttpClientKeepAliveThread;
     }
 
 
@@ -726,6 +742,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     /**
      * Have one or more classes or resources been modified so that a reload
      * is appropriate?
+     *
      * @return <code>true</code> if there's been a modification
      */
     public boolean modified() {
@@ -733,12 +750,12 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
         if (log.isDebugEnabled())
             log.debug("modified()");
 
-        for (Entry<String,ResourceEntry> entry : resourceEntries.entrySet()) {
+        for (Entry<String, ResourceEntry> entry : resourceEntries.entrySet()) {
             long cachedLastModified = entry.getValue().lastModified;
             long lastModified = resources.getClassLoaderResource(
                     entry.getKey()).getLastModified();
             if (lastModified != cachedLastModified) {
-                if( log.isDebugEnabled() )
+                if (log.isDebugEnabled())
                     log.debug(sm.getString("webappClassLoader.resourceModified",
                             entry.getKey(),
                             new Date(cachedLastModified),
@@ -771,7 +788,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             }
         }
 
-        if (jarCount < jarModificationTimes.size()){
+        if (jarCount < jarModificationTimes.size()) {
             log.info(sm.getString("webappClassLoader.jarsRemoved",
                     resources.getContext().getName()));
             return true;
@@ -812,7 +829,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
     // Note: exposed for use by tests
     protected final Class<?> doDefineClass(String name, byte[] b, int off, int len,
-            ProtectionDomain protectionDomain) {
+                                           ProtectionDomain protectionDomain) {
         return super.defineClass(name, b, off, len, protectionDomain);
     }
 
@@ -821,8 +838,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * not found, throw <code>ClassNotFoundException</code>.
      *
      * @param name The binary name of the class to be loaded
-     *
-     * @exception ClassNotFoundException if the class was not found
+     * @throws ClassNotFoundException if the class was not found
      */
     @Override
     public Class<?> findClass(String name) throws ClassNotFoundException {
@@ -839,7 +855,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                 try {
                     if (log.isTraceEnabled())
                         log.trace("      securityManager.checkPackageDefinition");
-                    securityManager.checkPackageDefinition(name.substring(0,i));
+                    securityManager.checkPackageDefinition(name.substring(0, i));
                 } catch (Exception se) {
                     if (log.isTraceEnabled())
                         log.trace("      -->Exception-->ClassNotFoundException", se);
@@ -857,12 +873,12 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             try {
                 if (securityManager != null) {
                     PrivilegedAction<Class<?>> dp =
-                        new PrivilegedFindClassByName(name);
+                            new PrivilegedFindClassByName(name);
                     clazz = AccessController.doPrivileged(dp);
                 } else {
                     clazz = findClassInternal(name);
                 }
-            } catch(AccessControlException ace) {
+            } catch (AccessControlException ace) {
                 log.warn(sm.getString("webappClassLoader.securityException", name,
                         ace.getMessage()), ace);
                 throw new ClassNotFoundException(name, ace);
@@ -874,7 +890,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             if ((clazz == null) && hasExternalRepositories) {
                 try {
                     clazz = super.findClass(name);
-                } catch(AccessControlException ace) {
+                } catch (AccessControlException ace) {
                     log.warn(sm.getString("webappClassLoader.securityException", name,
                             ace.getMessage()), ace);
                     throw new ClassNotFoundException(name, ace);
@@ -901,9 +917,9 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
         if (log.isTraceEnabled()) {
             ClassLoader cl;
-            if (Globals.IS_SECURITY_ENABLED){
+            if (Globals.IS_SECURITY_ENABLED) {
                 cl = AccessController.doPrivileged(
-                    new PrivilegedGetClassLoader(clazz));
+                        new PrivilegedGetClassLoader(clazz));
             } else {
                 cl = clazz.getClassLoader();
             }
@@ -959,7 +975,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
         }
         ResourceEntry entry = new ResourceEntry();
         entry.lastModified = resource.getLastModified();
-        synchronized(resourceEntries) {
+        synchronized (resourceEntries) {
             resourceEntries.putIfAbsent(path, entry);
         }
     }
@@ -971,8 +987,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * found, return an empty enumeration.
      *
      * @param name Name of the resources to be found
-     *
-     * @exception IOException if an input/output error occurs
+     * @throws IOException if an input/output error occurs
      */
     @Override
     public Enumeration<URL> findResources(String name) throws IOException {
@@ -1017,12 +1032,12 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * found, returns <code>null</code>.
      * <ul>
      * <li>If the <code>delegate</code> property is set to <code>true</code>,
-     *     call the <code>getResource()</code> method of the parent class
-     *     loader, if any.</li>
+     * call the <code>getResource()</code> method of the parent class
+     * loader, if any.</li>
      * <li>Call <code>findResource()</code> to find this resource in our
-     *     locally defined repositories.</li>
+     * locally defined repositories.</li>
      * <li>Call the <code>getResource()</code> method of the parent class
-     *     loader, if any.</li>
+     * loader, if any.</li>
      * </ul>
      *
      * @param name Name of the resource to return a URL for
@@ -1178,8 +1193,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * with <code>false</code> as the second argument.
      *
      * @param name The binary name of the class to be loaded
-     *
-     * @exception ClassNotFoundException if the class was not found
+     * @throws ClassNotFoundException if the class was not found
      */
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
@@ -1193,24 +1207,23 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * be found, returns <code>ClassNotFoundException</code>.
      * <ul>
      * <li>Call <code>findLoadedClass(String)</code> to check if the
-     *     class has already been loaded.  If it has, the same
-     *     <code>Class</code> object is returned.</li>
+     * class has already been loaded.  If it has, the same
+     * <code>Class</code> object is returned.</li>
      * <li>If the <code>delegate</code> property is set to <code>true</code>,
-     *     call the <code>loadClass()</code> method of the parent class
-     *     loader, if any.</li>
+     * call the <code>loadClass()</code> method of the parent class
+     * loader, if any.</li>
      * <li>Call <code>findClass()</code> to find this class in our locally
-     *     defined repositories.</li>
+     * defined repositories.</li>
      * <li>Call the <code>loadClass()</code> method of our parent
-     *     class loader, if any.</li>
+     * class loader, if any.</li>
      * </ul>
      * If the class was found using the above steps, and the
      * <code>resolve</code> flag is <code>true</code>, this method will then
      * call <code>resolveClass(Class)</code> on the resulting Class object.
      *
-     * @param name The binary name of the class to be loaded
+     * @param name    The binary name of the class to be loaded
      * @param resolve If <code>true</code> then resolve the class
-     *
-     * @exception ClassNotFoundException if the class was not found
+     * @throws ClassNotFoundException if the class was not found
      */
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
@@ -1296,7 +1309,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                 int i = name.lastIndexOf('.');
                 if (i >= 0) {
                     try {
-                        securityManager.checkPackageAccess(name.substring(0,i));
+                        securityManager.checkPackageAccess(name.substring(0, i));
                     } catch (SecurityException se) {
                         String error = sm.getString("webappClassLoader.restrictedPackage", name);
                         log.info(error, se);
@@ -1404,7 +1417,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                 for (Permission p : permissionList) {
                     pc.add(p);
                 }
-                loaderPC.put(codeUrl,pc);
+                loaderPC.put(codeUrl, pc);
             }
         }
         return pc;
@@ -1512,7 +1525,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     /**
      * Start the class loader.
      *
-     * @exception LifecycleException if a lifecycle error occurs
+     * @throws LifecycleException if a lifecycle error occurs
      */
     @Override
     public void start() throws LifecycleException {
@@ -1541,7 +1554,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     /**
      * Stop the class loader.
      *
-     * @exception LifecycleException if a lifecycle error occurs
+     * @throws LifecycleException if a lifecycle error occurs
      */
     @Override
     public void stop() throws LifecycleException {
@@ -1599,7 +1612,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
         // If the JVM is shutting down, skip the memory leak checks
         if (skipMemoryLeakChecksOnJvmShutdown
-            && !resources.getContext().getParent().getState().isAvailable()) {
+                && !resources.getContext().getParent().getState().isAvailable()) {
             // During reloading / redeployment the parent is expected to be
             // available. Parent is not available so this might be a JVM
             // shutdown.
@@ -1633,7 +1646,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             clearReferencesRmiTargets();
         }
 
-         // Clear the IntrospectionUtils cache.
+        // Clear the IntrospectionUtils cache.
         IntrospectionUtils.clear();
 
         // Clear the classloader reference in common-logging
@@ -1656,7 +1669,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * if it checked the context class loader) b) using reflection would
      * create a dependency on the DriverManager implementation which can,
      * and has, changed.
-     *
+     * <p>
      * We can't just create an instance of JdbcLeakPrevention as it will be
      * loaded by the common class loader (since it's .class file is in the
      * $CATALINA_HOME/lib directory). This would fail DriverManager's check
@@ -1664,7 +1677,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * our parent class loader but define the class with this class loader
      * so the JdbcLeakPrevention looks like a webapp class to the
      * DriverManager.
-     *
+     * <p>
      * If only apps cleaned up after themselves...
      */
     private final void clearReferencesJdbc() {
@@ -1674,7 +1687,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
         int offset = 0;
         try (InputStream is = getResourceAsStream(
                 "org/apache/catalina/loader/JdbcLeakPrevention.class")) {
-            int read = is.read(classBytes, offset, classBytes.length-offset);
+            int read = is.read(classBytes, offset, classBytes.length - offset);
             while (read > -1) {
                 offset += read;
                 if (offset == classBytes.length) {
@@ -1683,11 +1696,11 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                     System.arraycopy(classBytes, 0, tmp, 0, classBytes.length);
                     classBytes = tmp;
                 }
-                read = is.read(classBytes, offset, classBytes.length-offset);
+                read = is.read(classBytes, offset, classBytes.length - offset);
             }
             Class<?> lpClass =
-                defineClass("org.apache.catalina.loader.JdbcLeakPrevention",
-                    classBytes, 0, offset, this.getClass().getProtectionDomain());
+                    defineClass("org.apache.catalina.loader.JdbcLeakPrevention",
+                            classBytes, 0, offset, this.getClass().getProtectionDomain());
             Object obj = lpClass.getConstructor().newInstance();
             @SuppressWarnings("unchecked")
             List<String> driverNames = (List<String>) obj.getClass().getMethod(
@@ -1775,7 +1788,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                         // "runnable" in IBM JDK
                         // "action" in Apache Harmony
                         Object target = null;
-                        for (String fieldName : new String[] { "target", "runnable", "action" }) {
+                        for (String fieldName : new String[]{"target", "runnable", "action"}) {
                             try {
                                 Field targetField = thread.getClass().getDeclaredField(fieldName);
                                 targetField.setAccessible(true);
@@ -1867,7 +1880,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
         // Tomcat has been heavily modified - in which case there isn't much we
         // can do.
         for (int i = 0; i < elements.length; i++) {
-            StackTraceElement element = elements[elements.length - (i+1)];
+            StackTraceElement element = elements[elements.length - (i + 1)];
             if ("org.apache.catalina.connector.CoyoteAdapter".equals(
                     element.getClassName())) {
                 return true;
@@ -1891,7 +1904,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
             try {
                 Field newTasksMayBeScheduledField =
-                    thread.getClass().getDeclaredField("newTasksMayBeScheduled");
+                        thread.getClass().getDeclaredField("newTasksMayBeScheduled");
                 newTasksMayBeScheduledField.setAccessible(true);
                 Field queueField = thread.getClass().getDeclaredField("queue");
                 queueField.setAccessible(true);
@@ -1901,7 +1914,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                 Method clearMethod = queue.getClass().getDeclaredMethod("clear");
                 clearMethod.setAccessible(true);
 
-                synchronized(queue) {
+                synchronized (queue) {
                     newTasksMayBeScheduledField.setBoolean(thread, false);
                     clearMethod.invoke(queue);
                     // In case queue was already empty. Should only be one
@@ -1909,9 +1922,9 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                     queue.notifyAll();
                 }
 
-            }catch (NoSuchFieldException nfe){
+            } catch (NoSuchFieldException nfe) {
                 Method cancelMethod = thread.getClass().getDeclaredMethod("cancel");
-                synchronized(thread) {
+                synchronized (thread) {
                     cancelMethod.setAccessible(true);
                     cancelMethod.invoke(thread);
                 }
@@ -1937,10 +1950,10 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             // Make the fields in the Thread class that store ThreadLocals
             // accessible
             Field threadLocalsField =
-                Thread.class.getDeclaredField("threadLocals");
+                    Thread.class.getDeclaredField("threadLocals");
             threadLocalsField.setAccessible(true);
             Field inheritableThreadLocalsField =
-                Thread.class.getDeclaredField("inheritableThreadLocals");
+                    Thread.class.getDeclaredField("inheritableThreadLocals");
             inheritableThreadLocalsField.setAccessible(true);
             // Make the underlying array of ThreadLoad.ThreadLocalMap.Entry objects
             // accessible
@@ -1956,14 +1969,14 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
                     // Clear the first map
                     threadLocalMap = threadLocalsField.get(threads[i]);
-                    if (null != threadLocalMap){
+                    if (null != threadLocalMap) {
                         expungeStaleEntriesMethod.invoke(threadLocalMap);
                         checkThreadLocalMapForLeaks(threadLocalMap, tableField);
                     }
 
                     // Clear the second map
-                    threadLocalMap =inheritableThreadLocalsField.get(threads[i]);
-                    if (null != threadLocalMap){
+                    threadLocalMap = inheritableThreadLocalsField.get(threads[i]);
+                    if (null != threadLocalMap) {
                         expungeStaleEntriesMethod.invoke(threadLocalMap);
                         checkThreadLocalMapForLeaks(threadLocalMap, tableField);
                     }
@@ -1991,12 +2004,12 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * call to this method.
      */
     private void checkThreadLocalMapForLeaks(Object map,
-            Field internalTableField) throws IllegalAccessException,
+                                             Field internalTableField) throws IllegalAccessException,
             NoSuchFieldException {
         if (map != null) {
             Object[] table = (Object[]) internalTableField.get(map);
             if (table != null) {
-                for (int j =0; j < table.length; j++) {
+                for (int j = 0; j < table.length; j++) {
                     Object obj = table[j];
                     if (obj != null) {
                         boolean keyLoadedByWebapp = false;
@@ -2038,7 +2051,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                                             "webappClassLoader.checkThreadLocalsForLeaks.badValue",
                                             args[3]), e);
                                     args[4] = sm.getString(
-                                    "webappClassLoader.checkThreadLocalsForLeaks.unknown");
+                                            "webappClassLoader.checkThreadLocalsForLeaks.unknown");
                                 }
                             }
                             if (valueLoadedByWebapp) {
@@ -2067,7 +2080,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
     private String getPrettyClassName(Class<?> clazz) {
         String name = clazz.getCanonicalName();
-        if (name==null){
+        if (name == null) {
             name = clazz.getName();
         }
         return name;
@@ -2150,7 +2163,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
         int threadCountActual = tg.enumerate(threads);
         // Make sure we don't miss any threads
         while (threadCountActual == threadCountGuess) {
-            threadCountGuess *=2;
+            threadCountGuess *= 2;
             threads = new Thread[threadCountGuess];
             // Note tg.enumerate(Thread[]) silently ignores any threads that
             // can't fit into the array
@@ -2170,7 +2183,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             // Need access to the ccl field of sun.rmi.transport.Target to find
             // the leaks
             Class<?> objectTargetClass =
-                Class.forName("sun.rmi.transport.Target");
+                    Class.forName("sun.rmi.transport.Target");
             Field cclField = objectTargetClass.getDeclaredField("ccl");
             cclField.setAccessible(true);
             // Need access to the stub field to report the leaks
@@ -2191,8 +2204,8 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
             synchronized (tableLock) {
                 // Iterate over the values in the table
-                if (objTable instanceof Map<?,?>) {
-                    Iterator<?> iter = ((Map<?,?>) objTable).values().iterator();
+                if (objTable instanceof Map<?, ?>) {
+                    Iterator<?> iter = ((Map<?, ?>) objTable).values().iterator();
                     while (iter.hasNext()) {
                         Object obj = iter.next();
                         Object cclObject = cclField.get(obj);
@@ -2214,8 +2227,8 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                 }
 
                 // Iterate over the values in the table
-                if (implTable instanceof Map<?,?>) {
-                    Iterator<?> iter = ((Map<?,?>) implTable).values().iterator();
+                if (implTable instanceof Map<?, ?>) {
+                    Iterator<?> iter = ((Map<?, ?>) implTable).values().iterator();
                     while (iter.hasNext()) {
                         Object obj = iter.next();
                         Object cclObject = cclField.get(obj);
@@ -2262,7 +2275,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             throws ReflectiveOperationException, SecurityException, ClassCastException {
         Field f = target.getDeclaredField(mapName);
         f.setAccessible(true);
-        Map<?,?> map = (Map<?,?>) f.get(null);
+        Map<?, ?> map = (Map<?, ?>) f.get(null);
         Iterator<?> keys = map.keySet().iterator();
         while (keys.hasNext()) {
             Object key = keys.next();
@@ -2280,7 +2293,6 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * Find specified class in local repositories.
      *
      * @param name The binary name of the class to be loaded
-     *
      * @return the loaded class, or null if the class isn't found
      */
     protected Class<?> findClassInternal(String name) {
@@ -2405,8 +2417,8 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                     }
                     if (!sealCheck)
                         throw new SecurityException
-                            ("Sealing violation loading " + name + " : Package "
-                             + packageName + " is sealed.");
+                                ("Sealing violation loading " + name + " : Package "
+                                        + packageName + " is sealed.");
                 }
 
             }
@@ -2417,8 +2429,8 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
             } catch (UnsupportedClassVersionError ucve) {
                 throw new UnsupportedClassVersionError(
                         ucve.getLocalizedMessage() + " " +
-                        sm.getString("webappClassLoader.wrongVersion",
-                                name));
+                                sm.getString("webappClassLoader.wrongVersion",
+                                        name));
             }
             entry.loadedClass = clazz;
         }
@@ -2456,7 +2468,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
      * given manifest.
      *
      * @param name Path name to check
-     * @param man Associated manifest
+     * @param man  Associated manifest
      * @return <code>true</code> if the manifest associated says it is sealed
      */
     protected boolean isPackageSealed(String name, Manifest man) {
@@ -2519,9 +2531,9 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
     /**
      * Filter classes.
      *
-     * @param name class name
+     * @param name        class name
      * @param isClassName <code>true</code> if name is a class name,
-     *                <code>false</code> if name is a resource name
+     *                    <code>false</code> if name is a resource name
      * @return <code>true</code> if the class should be filtered
      */
     protected boolean filter(String name, boolean isClassName) {
@@ -2542,9 +2554,9 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                     return false;
                 }
                 if (name.startsWith("el.", 6) ||
-                    name.startsWith("servlet.", 6) ||
-                    name.startsWith("websocket.", 6) ||
-                    name.startsWith("security.auth.message.", 6)) {
+                        name.startsWith("servlet.", 6) ||
+                        name.startsWith("websocket.", 6) ||
+                        name.startsWith("security.auth.message.", 6)) {
                     return true;
                 }
             } else if (!isClassName && ch == '/') {
@@ -2553,9 +2565,9 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                     return false;
                 }
                 if (name.startsWith("el/", 6) ||
-                    name.startsWith("servlet/", 6) ||
-                    name.startsWith("websocket/", 6) ||
-                    name.startsWith("security/auth/message/", 6)) {
+                        name.startsWith("servlet/", 6) ||
+                        name.startsWith("websocket/", 6) ||
+                        name.startsWith("security/auth/message/", 6)) {
                     return true;
                 }
             }
@@ -2573,12 +2585,12 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                         return false;
                     }
                     if (name.startsWith("el.", 11) ||
-                        name.startsWith("catalina.", 11) ||
-                        name.startsWith("jasper.", 11) ||
-                        name.startsWith("juli.", 11) ||
-                        name.startsWith("tomcat.", 11) ||
-                        name.startsWith("naming.", 11) ||
-                        name.startsWith("coyote.", 11)) {
+                            name.startsWith("catalina.", 11) ||
+                            name.startsWith("jasper.", 11) ||
+                            name.startsWith("juli.", 11) ||
+                            name.startsWith("tomcat.", 11) ||
+                            name.startsWith("naming.", 11) ||
+                            name.startsWith("coyote.", 11)) {
                         return true;
                     }
                 }
@@ -2590,12 +2602,12 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
                         return false;
                     }
                     if (name.startsWith("el/", 11) ||
-                        name.startsWith("catalina/", 11) ||
-                        name.startsWith("jasper/", 11) ||
-                        name.startsWith("juli/", 11) ||
-                        name.startsWith("tomcat/", 11) ||
-                        name.startsWith("naming/", 11) ||
-                        name.startsWith("coyote/", 11)) {
+                            name.startsWith("catalina/", 11) ||
+                            name.startsWith("jasper/", 11) ||
+                            name.startsWith("juli/", 11) ||
+                            name.startsWith("tomcat/", 11) ||
+                            name.startsWith("naming/", 11) ||
+                            name.startsWith("coyote/", 11)) {
                         return true;
                     }
                 }
@@ -2672,7 +2684,7 @@ public abstract class WebappClassLoaderBase extends URLClassLoader
 
         public CombinedEnumeration(Enumeration<URL> enum1, Enumeration<URL> enum2) {
             @SuppressWarnings("unchecked")
-            Enumeration<URL>[] sources = new Enumeration[] { enum1, enum2 };
+            Enumeration<URL>[] sources = new Enumeration[]{enum1, enum2};
             this.sources = sources;
         }
 

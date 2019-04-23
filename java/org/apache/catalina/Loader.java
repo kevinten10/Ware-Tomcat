@@ -30,20 +30,29 @@ import java.beans.PropertyChangeListener;
  * must obey the following constraints:
  * <ul>
  * <li>Must implement <code>Lifecycle</code> so that the Context can indicate
- *     that a new class loader is required.
+ * that a new class loader is required.
  * <li>The <code>start()</code> method must unconditionally create a new
- *     <code>ClassLoader</code> implementation.
+ * <code>ClassLoader</code> implementation.
  * <li>The <code>stop()</code> method must throw away its reference to the
- *     <code>ClassLoader</code> previously utilized, so that the class loader,
- *     all classes loaded by it, and all objects of those classes, can be
- *     garbage collected.
+ * <code>ClassLoader</code> previously utilized, so that the class loader,
+ * all classes loaded by it, and all objects of those classes, can be
+ * garbage collected.
  * <li>Must allow a call to <code>stop()</code> to be followed by a call to
- *     <code>start()</code> on the same <code>Loader</code> instance.
+ * <code>start()</code> on the same <code>Loader</code> instance.
  * <li>Based on a policy chosen by the implementation, must call the
- *     <code>Context.reload()</code> method on the owning <code>Context</code>
- *     when a change to one or more of the class files loaded by this class
- *     loader is detected.
+ * <code>Context.reload()</code> method on the owning <code>Context</code>
+ * when a change to one or more of the class files loaded by this class
+ * loader is detected.
  * </ul>
+ * <p>
+ * 加载器表示一个Java类加载器实现，容器可以使用这个Java类加载器来加载类文件(在与加载器关联的存储库中)，
+ * 这些类文件设计为在请求时重新加载，以及一种检测底层存储库中是否发生了更改的机制。
+ * 为了使加载器实现成功地操作实现重载的上下文实现，它必须遵守以下约束:
+ * 必须实现生命周期，以便上下文可以指示需要一个新的类加载器。
+ * 方法必须无条件地创建一个新的类加载器实现。
+ * stop()方法必须丢弃它对先前使用的类加载器的引用，以便类加载器、由它加载的所有类以及这些类的所有对象都可以被垃圾收集。
+ * 必须允许在同一个加载器实例上先调用stop()，然后调用start()。
+ * 根据实现选择的策略，当检测到对这个类加载器加载的一个或多个类文件的更改时，必须在所属上下文中调用Context.reload()方法。
  *
  * @author Craig R. McClanahan
  */
@@ -54,6 +63,8 @@ public interface Loader {
      * Execute a periodic task, such as reloading, etc. This method will be
      * invoked inside the classloading context of this container. Unexpected
      * throwables will be caught and logged.
+     * <p>
+     * 执行周期性任务，如重新加载等。此方法将在此容器的类加载上下文中调用。意外的投掷物将被捕获并记录下来。
      */
     public void backgroundProcess();
 
@@ -121,7 +132,7 @@ public interface Loader {
      * such that the loaded classes should be reloaded?
      *
      * @return <code>true</code> when the repository has been modified,
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
      */
     public boolean modified();
 

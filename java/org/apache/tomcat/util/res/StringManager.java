@@ -49,6 +49,8 @@ import java.util.ResourceBundle;
  * StringManager将查找一个ResourceBundle，它的名称由给定的包名加上“localstring”后缀命名。
  * 实际上，这意味着本地化信息将包含在localstring中。属性文件位于类路径的包目录中。
  * 请参阅java.util的文档。ResourceBundle获取更多信息。
+ * <p>
+ * 单例模式
  *
  * @author James Duncan Davidson [duncan@eng.sun.com]
  * @author James Todd [gonzo@eng.sun.com]

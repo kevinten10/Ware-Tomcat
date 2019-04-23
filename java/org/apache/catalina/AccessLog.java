@@ -30,6 +30,11 @@ import org.apache.catalina.connector.Response;
  * {@link Request} and {@link Response} objects being null, having null
  * attributes or any other 'oddness' that may result from attempting to log
  * a request that was almost certainly rejected because it was mal-formed.
+ * <p>
+ * 用于阀门，指示阀门提供访问日志记录。Tomcat内部使用它来标识一个记录访问请求的阀门，
+ * 这样在处理链的早期被拒绝的请求仍然可以添加到访问日志中。这个接口的实现应该是健壮的，
+ * 以抵抗所提供的请求和响应对象为空、具有空属性或任何其他“奇怪”的情况，
+ * 这些情况可能是由于试图记录一个几乎肯定被拒绝的请求(因为它的格式错误)而导致的。
  */
 public interface AccessLog {
 
@@ -38,38 +43,38 @@ public interface AccessLog {
      * the AccessLog.
      */
     public static final String REMOTE_ADDR_ATTRIBUTE =
-        "org.apache.catalina.AccessLog.RemoteAddr";
+            "org.apache.catalina.AccessLog.RemoteAddr";
 
     /**
      * Name of request attribute used to override remote host name recorded by
      * the AccessLog.
      */
     public static final String REMOTE_HOST_ATTRIBUTE =
-        "org.apache.catalina.AccessLog.RemoteHost";
+            "org.apache.catalina.AccessLog.RemoteHost";
 
     /**
      * Name of request attribute used to override the protocol recorded by the
      * AccessLog.
      */
     public static final String PROTOCOL_ATTRIBUTE =
-        "org.apache.catalina.AccessLog.Protocol";
+            "org.apache.catalina.AccessLog.Protocol";
 
     /**
      * Name of request attribute used to override the server port recorded by
      * the AccessLog.
      */
     public static final String SERVER_PORT_ATTRIBUTE =
-        "org.apache.catalina.AccessLog.ServerPort";
+            "org.apache.catalina.AccessLog.ServerPort";
 
 
     /**
      * Add the request/response to the access log using the specified processing
      * time.
      *
-     * @param request   Request (associated with the response) to log
-     * @param response  Response (associated with the request) to log
-     * @param time      Time taken to process the request/response in
-     *                  milliseconds (use 0 if not known)
+     * @param request  Request (associated with the response) to log
+     * @param response Response (associated with the request) to log
+     * @param time     Time taken to process the request/response in
+     *                 milliseconds (use 0 if not known)
      */
     public void log(Request request, Response response, long time);
 
@@ -78,7 +83,7 @@ public interface AccessLog {
      * protocol and port used for the request? This are typically used in
      * conjunction with the {@link org.apache.catalina.valves.AccessLogValve}
      * which will otherwise log the original values.
-     *
+     * <p>
      * The attributes set are:
      * <ul>
      * <li>org.apache.catalina.RemoteAddr</li>
@@ -87,16 +92,16 @@ public interface AccessLog {
      * <li>org.apache.catalina.ServerPost</li>
      * </ul>
      *
-     * @param requestAttributesEnabled  <code>true</code> causes the attributes
-     *                                  to be set, <code>false</code> disables
-     *                                  the setting of the attributes.
+     * @param requestAttributesEnabled <code>true</code> causes the attributes
+     *                                 to be set, <code>false</code> disables
+     *                                 the setting of the attributes.
      */
     public void setRequestAttributesEnabled(boolean requestAttributesEnabled);
 
     /**
-     * @see #setRequestAttributesEnabled(boolean)
      * @return <code>true</code> if the attributes will be logged, otherwise
-     *         <code>false</code>
+     * <code>false</code>
+     * @see #setRequestAttributesEnabled(boolean)
      */
     public boolean getRequestAttributesEnabled();
 }
