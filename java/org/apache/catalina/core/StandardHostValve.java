@@ -99,7 +99,7 @@ final class StandardHostValve extends ValveBase {
      * based on the specified request URI.  If no matching Context can
      * be found, return an appropriate HTTP error.
      * <p>
-     * 根据指定的请求URI选择适当的子上下文来处理此请求。如果找不到匹配的上下文，则返回适当的HTTP错误。
+     * 根据指定的请求URI选择适当的子context来处理此请求。如果找不到匹配的上下文，则返回适当的HTTP错误。
      *
      * @param request  Request to be processed
      * @param response Response to be produced
@@ -111,11 +111,13 @@ final class StandardHostValve extends ValveBase {
             throws IOException, ServletException {
 
         // Select the Context to be used for this Request
+        // 从mapper中获取映射结果
         Context context = request.getContext();
         if (context == null) {
             return;
         }
 
+        // 异步支持
         if (request.isAsyncSupported()) {
             request.setAsyncSupported(context.getPipeline().isAsyncSupported());
         }
