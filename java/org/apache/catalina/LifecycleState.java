@@ -21,6 +21,9 @@ package org.apache.catalina;
  * See {@link Lifecycle} for the state transition diagram.
  */
 public enum LifecycleState {
+    /**
+     * @see LifecycleEvent
+     */
     NEW(false, null),
     INITIALIZING(false, Lifecycle.BEFORE_INIT_EVENT),
     INITIALIZED(false, Lifecycle.AFTER_INIT_EVENT),
@@ -53,7 +56,7 @@ public enum LifecycleState {
      * </ul>
      *
      * @return <code>true</code> if the component is available for use,
-     *         otherwise <code>false</code>
+     * otherwise <code>false</code>
      */
     public boolean isAvailable() {
         return available;
